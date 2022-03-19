@@ -1,8 +1,11 @@
+import { track } from "./effect";
+
 export function reactive (raw) {
   return new Proxy(raw,{
     get (target,key) {
       const res = Reflect.get(target,key);
       // TODO:收集依赖
+      track(target,key)
       return res
     },
 
