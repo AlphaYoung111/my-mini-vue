@@ -18,21 +18,28 @@ const targetMap = new WeakMap()
 // }
 export function track(target,key) {
   // target => key => deps
-  let depsMap = targetMap.get(target) as WeakMap<object,WeakSet<Function>>
+  let depsMap = targetMap.get(target) as Map<PropertyKey,Set<Function>>
   if (!depsMap) {
-    depsMap = new WeakMap()
+    depsMap = new Map()
     targetMap.set(target,depsMap)
   }
   
   let dep = depsMap.get(key)
   if (!dep) {
-    dep = new WeakSet()
+    dep = new Set()
     depsMap.set(key,dep) 
   }
 
   // 将当前执行得effect添加到对应得dep中
   dep.add(activeEffect)
+  console.log('我收集了')
+
   activeEffect = null
+}
+
+
+export function trigger (target,key,value) {
+  
 }
 
 // 保存当前执行得effect
@@ -40,5 +47,6 @@ let activeEffect
 export function effect (fn) {
   const _effect = new ReactiveEffect(fn)
 
+  // 接收到同时，立马执行一次传进来得函数
   _effect.run()
 }
