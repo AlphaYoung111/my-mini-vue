@@ -36,4 +36,38 @@ describe('effect', () => {
     expect(result).toBe('foo')
 
   })
+
+
+  test('scheduler', () => {
+    // 第一次仍然默认执行effect函数
+    // 如果有scheduler函数得化，那么在下面每一次响应式更新得时候，就会执行scheduler函数得内容
+    let dummy
+    let run
+    const scheduler = vi.fn(() => {
+      run = runner
+    })
+
+    const obj =reactive({foo:1})
+
+    const runner = effect(() => {
+      dummy = obj.foo
+    },{
+      scheduler
+    })
+
+    expect(scheduler).not.toHaveBeenCalled()
+    expect(dummy).toBe(1)
+    // should be called on first trigger
+    obj.foo++
+    expect(scheduler).toHaveBeenCalledTimes(1)
+    // should not run yet
+    expect(dummy).toBe(1)
+    // manualy run
+    run()
+    // should have run
+    expect(dummy).toBe(2)
+    obj.foo++
+    expect(dummy).toBe(2)
+
+  })
 })

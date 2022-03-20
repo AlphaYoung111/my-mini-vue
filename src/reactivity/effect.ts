@@ -1,6 +1,6 @@
 class ReactiveEffect {
   private _fn: Function
-  constructor(fn: Function) {
+  constructor(fn: Function, public scheduler?: Function) {
     this._fn = fn;
   }
 
@@ -41,26 +41,39 @@ export function trigger(target, key, value) {
   if (!depsMap) {
     throw new Error(`not found ${target}`)
   }
-  
+
   let dep = depsMap.get(key)
   if (!dep) {
     throw new Error(`not found ${key} in ${target}`)
   }
 
   for (const effect of dep) {
-    effect.run()
+    if (effect.scheduler) {
+
+      effect.scheduler()
+    } else {
+      effect.run()
+    }
+
   }
 
 
 }
 
+interface EffectOptions {
+  scheduler: Function
+}
+
 // 保存当前执行得effect
 let activeEffect
-export function effect(fn) {
-  const _effect = new ReactiveEffect(fn)
+export function effect(fn: Function, options?: EffectOptions) {
+  const scheduler = options?.scheduler
+  const _effect = new ReactiveEffect(fn, scheduler)
   // 接收到同时，立马执行一次传进来得函数
   _effect.run()
 
+
   // 因为返回出去得时候ReactiveEffect类内部涉及到this指向问题，所以需要bind回来
-  return _effect.run.bind(_effect)
+  const runner = _effect.run.bind(_effect)
+  return runner
 }
