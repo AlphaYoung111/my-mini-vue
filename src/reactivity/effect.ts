@@ -6,7 +6,7 @@ class ReactiveEffect {
 
   run() {
     activeEffect = this
-    this._fn()
+    return this._fn()
   }
 }
 
@@ -32,9 +32,7 @@ export function track(target, key) {
 
   // 将当前执行得effect添加到对应得dep中
   dep.add(activeEffect)
-  console.log('我收集了')
 
-  // activeEffect = null
 }
 
 
@@ -62,4 +60,7 @@ export function effect(fn) {
   const _effect = new ReactiveEffect(fn)
   // 接收到同时，立马执行一次传进来得函数
   _effect.run()
+
+  // 因为返回出去得时候ReactiveEffect类内部涉及到this指向问题，所以需要bind回来
+  return _effect.run.bind(_effect)
 }
