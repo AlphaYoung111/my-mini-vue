@@ -50,10 +50,11 @@ export function track(target, key) {
     depsMap.set(key, dep)
   }
 
+  if (!activeEffect) return
   // 将当前执行得effect添加到对应得dep中
-  dep.add(activeEffect!)
+  dep.add(activeEffect)
   // 将当前属性得所有effect存储到自己得身上，方便stop进行清空想要更新得effect
-  activeEffect!.deps.push(dep)
+  activeEffect.deps.push(dep)
 }
 
 
@@ -83,7 +84,7 @@ export function trigger(target, key, value) {
 
 interface EffectOptions {
   scheduler: Function
-  onStop:() => void
+  onStop: () => void
 }
 
 // 保存当前执行得effect
