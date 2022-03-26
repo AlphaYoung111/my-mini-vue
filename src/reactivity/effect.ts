@@ -1,6 +1,7 @@
 class ReactiveEffect {
   private _fn: Function
   deps = [] as Set<ReactiveEffect>[]
+  active = true
   constructor(fn: Function, public scheduler?: Function) {
     this._fn = fn;
   }
@@ -10,11 +11,19 @@ class ReactiveEffect {
     return this._fn()
   }
 
-  stop () {
-    this.deps.forEach(dep => {
-      dep.delete(this)
-    })
+  stop() {
+    if (this.active) {
+      cleanupEffect(this)
+      this.active = false
+    }
+
   }
+}
+
+function cleanupEffect(effect: ReactiveEffect) {
+  effect.deps.forEach(dep => {
+    dep.delete(effect)
+  })
 }
 
 const targetMap = new WeakMap()
@@ -82,12 +91,12 @@ export function effect(fn: Function, options?: EffectOptions) {
 
 
   // 因为返回出去得时候ReactiveEffect类内部涉及到this指向问题，所以需要bind回来
-  const runner:any = _effect.run.bind(_effect)
+  const runner: any = _effect.run.bind(_effect)
   runner.effect = _effect
   return runner
 }
 
 
-export function stop (runner:any) {
+export function stop(runner: any) {
   runner.effect.stop()
 }
