@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite'
 import AutoImport from 'unplugin-auto-import/vite'
-
+import path from 'path'
 export default defineConfig({
   test:{
 
@@ -12,5 +12,10 @@ export default defineConfig({
       ],
       dts:'../auto-import.d.ts'
     })
-  ]
+  ],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    }
+  }
 })
