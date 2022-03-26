@@ -1,4 +1,4 @@
-import { reactive } from "../reactive"
+import { reactive } from "@/reactivity/reactive";
 
 describe('reactive',() => {
   test('happy path',() => {
