@@ -1,4 +1,4 @@
-import { effect } from "../effect"
+import { effect, stop } from "../effect"
 import { reactive } from "../reactive"
 
 describe('effect', () => {
@@ -69,5 +69,24 @@ describe('effect', () => {
     obj.foo++
     expect(dummy).toBe(2)
 
+  })
+
+  test('stop', () => {
+    let dummy
+    const obj = reactive({ prop: 1 })
+    const runner = effect(() => {
+      dummy = obj.prop
+    })
+
+    obj.prop = 2
+    expect(dummy).toBe(2)
+    // stop track
+    stop(runner)
+    obj.prop = 3
+    expect(dummy).toBe(2)
+
+    // restart track reactive
+    runner()
+    expect(dummy).toBe(3)
   })
 })

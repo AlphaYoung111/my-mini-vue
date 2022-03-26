@@ -1,5 +1,6 @@
 class ReactiveEffect {
   private _fn: Function
+  deps = [] as Set<ReactiveEffect>[]
   constructor(fn: Function, public scheduler?: Function) {
     this._fn = fn;
   }
@@ -7,6 +8,12 @@ class ReactiveEffect {
   run() {
     activeEffect = this
     return this._fn()
+  }
+
+  stop () {
+    this.deps.forEach(dep => {
+      dep.delete(this)
+    })
   }
 }
 
@@ -31,8 +38,9 @@ export function track(target, key) {
   }
 
   // 将当前执行得effect添加到对应得dep中
-  dep.add(activeEffect)
-
+  dep.add(activeEffect!)
+  // 将当前属性得所有effect存储到自己得身上，方便stop进行清空想要更新得effect
+  activeEffect!.deps.push(dep)
 }
 
 
@@ -65,7 +73,7 @@ interface EffectOptions {
 }
 
 // 保存当前执行得effect
-let activeEffect
+let activeEffect: ReactiveEffect | null
 export function effect(fn: Function, options?: EffectOptions) {
   const scheduler = options?.scheduler
   const _effect = new ReactiveEffect(fn, scheduler)
@@ -74,6 +82,12 @@ export function effect(fn: Function, options?: EffectOptions) {
 
 
   // 因为返回出去得时候ReactiveEffect类内部涉及到this指向问题，所以需要bind回来
-  const runner = _effect.run.bind(_effect)
+  const runner:any = _effect.run.bind(_effect)
+  runner.effect = _effect
   return runner
+}
+
+
+export function stop (runner:any) {
+  runner.effect.stop()
 }
