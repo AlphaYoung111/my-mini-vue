@@ -1,5 +1,5 @@
-import { effect, stop } from "../effect"
-import { reactive } from "../reactive"
+import { effect, stop } from "@/reactivity/effect"
+import { reactive } from "@/reactivity/reactive"
 
 describe('effect', () => {
   test('happy path',() => {
@@ -88,5 +88,21 @@ describe('effect', () => {
     // restart track reactive
     runner()
     expect(dummy).toBe(3)
+  })
+
+
+  test('onStop', () => {
+    const obj = reactive({foo:1})
+    const onStop = vi.fn()
+    let dummy
+    const runner = effect(() => {
+      dummy = obj.foo
+    },{
+      onStop
+    })
+
+    stop(runner)
+    expect(onStop).toHaveBeenCalledTimes(1)
+
   })
 })

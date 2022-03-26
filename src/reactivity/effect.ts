@@ -1,7 +1,10 @@
+import { extend } from "@/shared";
+
 class ReactiveEffect {
   private _fn: Function
   deps = [] as Set<ReactiveEffect>[]
   active = true
+  onStop?: () => void
   constructor(fn: Function, public scheduler?: Function) {
     this._fn = fn;
   }
@@ -13,6 +16,7 @@ class ReactiveEffect {
 
   stop() {
     if (this.active) {
+      this.onStop && this.onStop()
       cleanupEffect(this)
       this.active = false
     }
@@ -79,13 +83,16 @@ export function trigger(target, key, value) {
 
 interface EffectOptions {
   scheduler: Function
+  onStop:() => void
 }
 
 // 保存当前执行得effect
 let activeEffect: ReactiveEffect | null
-export function effect(fn: Function, options?: EffectOptions) {
-  const scheduler = options?.scheduler
-  const _effect = new ReactiveEffect(fn, scheduler)
+export function effect(fn: Function, options?: Partial<EffectOptions>) {
+  const _effect = new ReactiveEffect(fn, options?.scheduler)
+
+  extend(_effect, options)
+
   // 接收到同时，立马执行一次传进来得函数
   _effect.run()
 
