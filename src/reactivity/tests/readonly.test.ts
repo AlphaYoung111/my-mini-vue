@@ -12,6 +12,5 @@ describe('readonly', () => {
 
     expect(wrapped).not.toBe(original)
     expect(wrapped.foo).toBe(1)
-
   })
 })
