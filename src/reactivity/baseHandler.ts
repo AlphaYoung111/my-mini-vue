@@ -13,7 +13,10 @@ function createGetter(isReadonly: boolean = false) {
 
 function createSetter(isReadonly: boolean = false) {
   return function set(target, key, value) {
-    if (isReadonly) return true
+    if (isReadonly) {
+      console.warn(`${key} is readonly, target can not be set, ${target}`);
+      return true
+    }
     const res = Reflect.set(target, key, value);
     trigger(target, key, value)
     return res
