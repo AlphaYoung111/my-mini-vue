@@ -1,4 +1,4 @@
-import { readonly } from '@/reactivity/reactive';
+import { isReadonly, readonly } from '@/reactivity/reactive';
 describe('readonly', () => {
   test('happy path', () => {
     const original =  {
@@ -12,6 +12,8 @@ describe('readonly', () => {
 
     expect(wrapped).not.toBe(original)
     expect(wrapped.foo).toBe(1)
+    expect(isReadonly(wrapped)).toBe(true)
+    expect(isReadonly(original)).toBe(false)
   })
 
   test('should warn when set', () => {
