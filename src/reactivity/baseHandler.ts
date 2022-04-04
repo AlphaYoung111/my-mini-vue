@@ -1,9 +1,15 @@
 import { reactive, readonly } from '@/reactivity/reactive';
-import { isObject } from "@/shared";
+import { extend, isObject } from "@/shared";
 import { track, trigger } from "./effect";
 import { ReactiveFlags } from "./reactive";
 
-function createGetter(isReadonly: boolean = false) {
+const get = createGetter()
+const set = createSetter()
+const readonlyGet = createGetter(true)
+const readonlySet = createSetter(true)
+const shallowReadonlyGet = createGetter(true, true)
+
+function createGetter(isReadonly: boolean = false, isShallow: boolean = false) {
   return function get(target, key) {
     let res = Reflect.get(target, key);
 
@@ -12,6 +18,8 @@ function createGetter(isReadonly: boolean = false) {
     } else if (key === ReactiveFlags.IS_READONLY) {
       return isReadonly
     }
+
+    if (isShallow) return res
 
     if (isObject(res)) {
       res = isReadonly ? readonly(res) : reactive(res)
@@ -37,10 +45,7 @@ function createSetter(isReadonly: boolean = false) {
   }
 }
 
-const get = createGetter()
-const set = createSetter()
-const readonlyGet = createGetter(true)
-const readonlySet = createSetter(true)
+
 
 export const mutableHandlers = {
   get,
@@ -51,3 +56,8 @@ export const readonlyHandlers = {
   get: readonlyGet,
   set: readonlySet
 }
+
+
+export const shallowReadonlyHandlers = extend({}, readonlyHandlers, {
+  get: shallowReadonlyGet,
+})
