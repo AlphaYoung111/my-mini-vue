@@ -82,7 +82,10 @@ describe('effect', () => {
     expect(dummy).toBe(2)
     // stop track
     stop(runner)
-    obj.prop = 3
+    // obj.prop = 3
+    // 这里相当于又触发了收集依赖的操作，我们上一步刚把依赖清完，这里又添加了
+    // 导致下面赋值的时候触发了依赖，倒是prop更新了变成了3
+    obj.prop++ // obj.prop = obj.prop + 1
     expect(dummy).toBe(2)
 
     // restart track reactive

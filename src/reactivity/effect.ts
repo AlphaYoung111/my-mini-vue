@@ -1,8 +1,13 @@
 import { extend } from "@/shared";
 
+// 保存当前执行得effect
+let activeEffect: ReactiveEffect | null
+let shouldTrack
+
 class ReactiveEffect {
   private _fn: Function
   deps = [] as Set<ReactiveEffect>[]
+  // 当前是否为stop过
   active = true
   onStop?: () => void
   constructor(fn: Function, public scheduler?: Function) {
@@ -10,8 +15,16 @@ class ReactiveEffect {
   }
 
   run() {
+    if (!this.active) {
+      return this._fn()
+    }
+    
+    // 非stop的情况下，开启开关收集状态
     activeEffect = this
-    return this._fn()
+    shouldTrack = true
+    const result = this._fn()
+    shouldTrack = false
+    return result
   }
 
   stop() {
@@ -28,6 +41,7 @@ function cleanupEffect(effect: ReactiveEffect) {
   effect.deps.forEach(dep => {
     dep.delete(effect)
   })
+  effect.deps.length = 0
 }
 
 const targetMap = new WeakMap()
@@ -36,7 +50,14 @@ const targetMap = new WeakMap()
 //     key: []
 //   }
 // }
+
+function isTracking () {
+  return shouldTrack && activeEffect !== undefined
+}
+
 export function track(target, key) {
+  if (!isTracking()) return
+
   // target => key => deps
   let depsMap = targetMap.get(target) as Map<PropertyKey, Set<ReactiveEffect>>
   if (!depsMap) {
@@ -50,11 +71,11 @@ export function track(target, key) {
     depsMap.set(key, dep)
   }
 
-  if (!activeEffect) return
   // 将当前执行得effect添加到对应得dep中
-  dep.add(activeEffect)
+  if (dep.has(activeEffect!)) return
+  dep.add(activeEffect!)
   // 将当前属性得所有effect存储到自己得身上，方便stop进行清空想要更新得effect
-  activeEffect.deps.push(dep)
+  activeEffect!.deps.push(dep)
 }
 
 
@@ -71,7 +92,6 @@ export function trigger(target, key, value) {
 
   for (const effect of dep) {
     if (effect.scheduler) {
-
       effect.scheduler()
     } else {
       effect.run()
@@ -87,8 +107,6 @@ interface EffectOptions {
   onStop: () => void
 }
 
-// 保存当前执行得effect
-let activeEffect: ReactiveEffect | null
 export function effect(fn: Function, options?: Partial<EffectOptions>) {
   const _effect = new ReactiveEffect(fn, options?.scheduler)
 
