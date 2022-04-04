@@ -1,3 +1,4 @@
+import { isProxy } from '@/reactivity/reactive';
 import { isReadonly, readonly } from '@/reactivity/reactive';
 describe('readonly', () => {
   test('should nested readonly', () => {
@@ -16,6 +17,8 @@ describe('readonly', () => {
     expect(isReadonly(original)).toBe(false)
     expect(isReadonly(wrapped.bar)).toBe(true)
     expect(isReadonly(original.bar)).toBe(false)
+    expect(isProxy(wrapped)).toBe(true)
+
   })
 
   test('should warn when set', () => {

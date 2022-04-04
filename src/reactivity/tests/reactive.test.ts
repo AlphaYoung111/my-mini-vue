@@ -1,4 +1,4 @@
-import { reactive, isReactive } from "@/reactivity/reactive";
+import { reactive, isReactive, isProxy } from "@/reactivity/reactive";
 
 describe('reactive',() => {
   test('happy path',() => {
@@ -12,6 +12,10 @@ describe('reactive',() => {
     expect(isReactive(observed)).toBe(true)
 
     expect(isReactive(original)).toBe(false)
+
+    expect(isProxy(original)).toBe(false)
+
+    expect(isProxy(observed)).toBe(true)
   })
 
   test('nested reactive', () => {
