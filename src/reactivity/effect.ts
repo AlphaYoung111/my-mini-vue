@@ -18,7 +18,7 @@ class ReactiveEffect {
     if (!this.active) {
       return this._fn()
     }
-    
+
     // 非stop的情况下，开启开关收集状态
     activeEffect = this
     shouldTrack = true
@@ -51,7 +51,7 @@ const targetMap = new WeakMap()
 //   }
 // }
 
-function isTracking () {
+function isTracking() {
   return shouldTrack && activeEffect !== undefined
 }
 
@@ -71,6 +71,11 @@ export function track(target, key) {
     depsMap.set(key, dep)
   }
 
+  trackEffects(dep)
+}
+
+// 这里抽离添加dep的逻辑，因为ref，不需要上面使用key的形式
+export function trackEffects(dep) {
   // 将当前执行得effect添加到对应得dep中
   if (dep.has(activeEffect!)) return
   dep.add(activeEffect!)
