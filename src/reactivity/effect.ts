@@ -51,7 +51,7 @@ const targetMap = new WeakMap()
 //   }
 // }
 
-function isTracking() {
+export function isTracking() {
   return shouldTrack && activeEffect !== undefined
 }
 
