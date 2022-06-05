@@ -75,7 +75,7 @@ export function track(target, key) {
 }
 
 // 这里抽离添加dep的逻辑，因为ref，不需要上面使用key的形式
-export function trackEffects(dep) {
+export function trackEffects(dep: Set<any>) {
   // 将当前执行得effect添加到对应得dep中
   if (dep.has(activeEffect!)) return
   dep.add(activeEffect!)
@@ -95,6 +95,11 @@ export function trigger(target, key, value) {
     throw new Error(`not found ${key} in ${target}`)
   }
 
+  triggerEffects(dep)
+
+}
+
+export function triggerEffects (dep:Set<any>) {
   for (const effect of dep) {
     if (effect.scheduler) {
       effect.scheduler()
@@ -103,8 +108,6 @@ export function trigger(target, key, value) {
     }
 
   }
-
-
 }
 
 interface EffectOptions {
