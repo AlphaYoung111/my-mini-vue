@@ -1,5 +1,6 @@
+import { reactive } from '@/reactivity/reactive';
 import { effect } from '@/reactivity/effect';
-import { ref } from "@/reactivity/ref"
+import { isRef, ref, unRef } from "@/reactivity/ref"
 
 describe('ref', () => {
 
@@ -52,5 +53,25 @@ describe('ref', () => {
     
     expect(dummy).toBe(2)
   }) 
+
+  test('isRef', () => {
+    const a = ref(1)
+    const user = reactive({
+      a:1
+    })
+
+    expect(isRef(a)).toBe(true)
+    expect(isRef(1)).toBe(false)
+    expect(isRef(user.a)).toBe(false)
+
+  })
+
+  test('isRef', () => {
+    const a = ref(1)
+
+    expect(unRef(a)).toBe(1)
+    expect(unRef(1)).toBe(1)
+
+  })
 
 })
