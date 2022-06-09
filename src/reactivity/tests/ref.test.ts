@@ -35,7 +35,7 @@ describe('ref', () => {
   })
 
 
-  test.skip('should make nested properties reactive', () => {
+  test('should make nested properties reactive', () => {
     const a =ref({
       count: 1
     })
@@ -43,12 +43,12 @@ describe('ref', () => {
     let dummy
 
     effect(() => {
-      dummy = a.count.value
+      dummy = a.value.count
     })
 
     expect(dummy).toBe(1)
 
-    a.count.value = 2
+    a.value.count = 2
     
     expect(dummy).toBe(2)
   }) 

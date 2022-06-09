@@ -1,32 +1,54 @@
+import { reactive } from '@/reactivity/reactive';
+import { hasChanged, isObject } from "@/shared"
 import { isTracking, trackEffects, triggerEffects } from "./effect"
 
 export class RefImpl {
   private _value: any
-  deps:Set<RefImpl>
+  private _rawValue: any
+  deps: Set<RefImpl>
   constructor(value) {
-    this._value = value
+    // 因为进行对比的时候，需要对比的是原始对象
+    // 所以我们单独存储原始值
+    this._rawValue = value
+
+    // 判断是否为对象
+    this._value = covert(value)
+
+
     this.deps = new Set()
   }
 
-  get value () {
-    if (isTracking()) {
-      trackEffects(this.deps)
-    }
+  get value() {
+    trackRefValue(this)
     return this._value
   }
 
-  set value (newValue) {
-    if (Object.is(newValue, this._value)) return
-    this._value = newValue
-    triggerEffects(this.deps)
+  set value(newValue) {
+    if (hasChanged(newValue, this._rawValue)) {
+      this._rawValue = newValue
+      this._value = covert(newValue)
+      triggerEffects(this.deps)
+    }
+
+  }
+}
+
+function covert (value) {
+  return isObject(value) ? reactive(value) : value
+}
+
+
+function trackRefValue(ref) {
+  if (isTracking()) {
+    trackEffects(ref.deps)
   }
 }
 
 
-export function ref <T>(value: T):any {
+export function ref<T>(value: T): any {
   return new RefImpl(value)
 }
 
-export interface Ref<T =any> {
+export interface Ref<T = any> {
   value: T
 }
