@@ -1,13 +1,13 @@
-import { effect, stop } from "@/reactivity/effect"
-import { reactive } from "@/reactivity/reactive"
+import { effect, stop } from '@/reactivity/effect'
+import { reactive } from '@/reactivity/reactive'
 
 describe('effect', () => {
-  test('happy path',() => {
+  test('happy path', () => {
     const user = reactive({
-      age:10
+      age: 10,
     })
 
-    let nextAge 
+    let nextAge
     effect(() => {
       nextAge = user.age + 1
     })
@@ -17,12 +17,10 @@ describe('effect', () => {
     user.age++
 
     expect(nextAge).toBe(12)
-
   })
 
-
-  test('should return runner when call effect',() => {
-    // effect(fn) => function(runner) => fn => return 
+  test('should return runner when call effect', () => {
+    // effect(fn) => function(runner) => fn => return
     let foo = 10
     const runner = effect(() => {
       foo++
@@ -34,9 +32,7 @@ describe('effect', () => {
     const result = runner()
     expect(foo).toBe(12)
     expect(result).toBe('foo')
-
   })
-
 
   test('scheduler', () => {
     // 第一次仍然默认执行effect函数
@@ -47,12 +43,12 @@ describe('effect', () => {
       run = runner
     })
 
-    const obj =reactive({foo:1})
+    const obj = reactive({ foo: 1 })
 
     const runner = effect(() => {
       dummy = obj.foo
-    },{
-      scheduler
+    }, {
+      scheduler,
     })
 
     expect(scheduler).not.toHaveBeenCalled()
@@ -68,7 +64,6 @@ describe('effect', () => {
     expect(dummy).toBe(2)
     obj.foo++
     expect(dummy).toBe(2)
-
   })
 
   test('stop', () => {
@@ -93,19 +88,17 @@ describe('effect', () => {
     expect(dummy).toBe(3)
   })
 
-
   test('onStop', () => {
-    const obj = reactive({foo:1})
+    const obj = reactive({ foo: 1 })
     const onStop = vi.fn()
     let dummy
     const runner = effect(() => {
       dummy = obj.foo
-    },{
-      onStop
+    }, {
+      onStop,
     })
 
     stop(runner)
     expect(onStop).toHaveBeenCalledTimes(1)
-
   })
 })
