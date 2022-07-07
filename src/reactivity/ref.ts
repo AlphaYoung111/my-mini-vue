@@ -56,10 +56,12 @@ export function unRef(ref) {
 export function proxyRefs(objWithRefs) {
   return new Proxy(objWithRefs, {
     get(target, key) {
+      // 通过unRef自动解包 实现script中的ref在template中的直接使用
       return unRef(Reflect.get(target, key))
     },
 
     set(target, key, value) {
+      // 新的值是不是ref,旧的值是ref就需要使用.value
       if (isRef(target[key]) && !isRef(value))
         return target[key].value = value
 
