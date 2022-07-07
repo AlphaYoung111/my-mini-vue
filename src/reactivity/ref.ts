@@ -1,6 +1,6 @@
-import { reactive } from '@/reactivity/reactive';
-import { hasChanged, isObject } from "@/shared"
-import { isTracking, trackEffects, triggerEffects } from "./effect"
+import { isTracking, trackEffects, triggerEffects } from './effect'
+import { reactive } from '@/reactivity/reactive'
+import { hasChanged, isObject } from '@/shared'
 
 export class RefImpl {
   private _value: any
@@ -14,7 +14,6 @@ export class RefImpl {
 
     // 判断是否为对象
     this._value = covert(value)
-
 
     this.deps = new Set()
   }
@@ -30,32 +29,44 @@ export class RefImpl {
       this._value = covert(newValue)
       triggerEffects(this.deps)
     }
-
   }
 }
 
-function covert (value) {
+function covert(value) {
   return isObject(value) ? reactive(value) : value
 }
 
-
 function trackRefValue(ref) {
-  if (isTracking()) {
+  if (isTracking())
     trackEffects(ref.deps)
-  }
 }
-
 
 export function ref<T>(value: T): any {
   return new RefImpl(value)
 }
 
-export function isRef (value) {
+export function isRef(value) {
   return !!value._v_isRef
 }
 
-export function unRef (ref) {
-  return isRef(ref)? ref.value : ref
+export function unRef(ref) {
+  return isRef(ref) ? ref.value : ref
+}
+
+export function proxyRefs(objWithRefs) {
+  return new Proxy(objWithRefs, {
+    get(target, key) {
+      return unRef(Reflect.get(target, key))
+    },
+
+    set(target, key, value) {
+      if (isRef(target[key]) && !isRef(value))
+        return target[key].value = value
+
+      else
+        return Reflect.set(target, key, value)
+    },
+  })
 }
 
 export interface Ref<T = any> {
