@@ -28,7 +28,7 @@ describe('computed', () => {
     expect(getter).toHaveBeenCalledTimes(1)
 
     // should not compute again
-    cValue.value
+    cValue.value // get
     expect(getter).toHaveBeenCalledTimes(1)
 
     // should not compute until needed
