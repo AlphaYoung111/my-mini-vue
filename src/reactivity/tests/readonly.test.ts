@@ -1,12 +1,11 @@
-import { isProxy } from '@/reactivity/reactive';
-import { isReadonly, readonly } from '@/reactivity/reactive';
+import { isProxy, isReadonly, readonly } from '@/reactivity/reactive'
 describe('readonly', () => {
   test('should nested readonly', () => {
-    const original =  {
+    const original = {
       foo: 1,
       bar: {
-        baz: 2
-      }
+        baz: 2,
+      },
     }
 
     const wrapped = readonly(original)
@@ -18,17 +17,16 @@ describe('readonly', () => {
     expect(isReadonly(wrapped.bar)).toBe(true)
     expect(isReadonly(original.bar)).toBe(false)
     expect(isProxy(wrapped)).toBe(true)
-
   })
 
   test('should warn when set', () => {
     console.warn = vi.fn()
 
-    const original =  {
+    const original = {
       foo: 1,
       bar: {
-        baz: 2
-      }
+        baz: 2,
+      },
     }
 
     const wrapped = readonly(original)

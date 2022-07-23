@@ -1,8 +1,8 @@
-import { reactive, isReactive, isProxy } from "@/reactivity/reactive";
+import { isProxy, isReactive, reactive } from '@/reactivity/reactive'
 
-describe('reactive',() => {
-  test('happy path',() => {
-    const original = {foo:1}
+describe('reactive', () => {
+  test('happy path', () => {
+    const original = { foo: 1 }
     const observed = reactive(original)
 
     expect(observed).not.toBe(original)
@@ -21,9 +21,9 @@ describe('reactive',() => {
   test('nested reactive', () => {
     const original = {
       nested: {
-        bar: 2
+        bar: 2,
       },
-      arr: [{foo: 1}]
+      arr: [{ foo: 1 }],
     }
     const observed = reactive(original)
     expect(isReactive(observed.nested)).toBe(true)
