@@ -1,13 +1,22 @@
 import { render } from './render'
 import type { ContainerElement } from './types'
 import { createVNode } from './vnode'
+import { error } from '@/shared'
 
 export function createApp(rootComponent) {
   return {
-    mount(rootContainer: ContainerElement) {
+    mount(rootContainer: string & ContainerElement) {
       const vnode = createVNode(rootComponent)
 
-      render(vnode, rootContainer)
+      let containerEl
+
+      if (typeof rootContainer === 'string')
+        containerEl = document.querySelector(rootContainer)
+
+      if (!rootContainer)
+        error(`can not find element ${rootContainer} on document`)
+
+      render(vnode, containerEl)
     },
   }
 }

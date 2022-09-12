@@ -1,7 +1,8 @@
 import type { ComponentInstance, ComponentRenderObj, VNode } from './types'
-export function createComponentInstance(vnode: VNode) {
+export function createComponentInstance(vnode: VNode): ComponentInstance {
   const component = {
     vnode,
+    type: vnode.type,
   }
 
   return component
@@ -16,7 +17,7 @@ export function setupComponent(instance: ComponentInstance) {
 }
 
 function setupStateFulComponent(instance: ComponentInstance) {
-  const component = instance.vnode.type
+  const component = instance.type
 
   const { setup } = component as ComponentRenderObj
 
@@ -31,4 +32,13 @@ function handleSetupResult(instance: ComponentInstance, setupResult: Function|ob
   // function | object
   if (typeof setupResult === 'object')
     instance.setupState = setupResult
+
+  finishComponentSetup(instance)
+}
+
+function finishComponentSetup(instance: ComponentInstance) {
+  const Component = instance.type as ComponentRenderObj
+
+  if (Component.render)
+    instance.render = Component.render
 }

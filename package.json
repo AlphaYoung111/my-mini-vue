@@ -8,7 +8,8 @@
   "main": "index.js",
   "scripts": {
     "test": "vitest --watch",
-    "fix": "eslint src/**/*.*  --fix"
+    "fix": "eslint src/**/*.*  --fix",
+    "build": "vite build --watch"
   },
   "dependencies": {
     "vite": "^2.8.6"

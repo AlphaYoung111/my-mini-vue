@@ -1,5 +1,7 @@
+import { h } from '../../dist/mini-vue.es.js'
+
 export const App = {
-  render(h) {
+  render() {
     return h('div', `hi,${this.msg}`)
   },
 

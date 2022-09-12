@@ -1,7 +1,7 @@
 export type ContainerElement = keyof HTMLElementTagNameMap
 
 export interface ComponentRenderObj {
-  render: () => void
+  render: () => VNode
   setup?: () => object | Function
 }
 
@@ -16,4 +16,6 @@ export interface VNode {
 export interface ComponentInstance {
   vnode: VNode
   setupState?: object
+  type: VNodeType
+  render?: () => VNode
 }

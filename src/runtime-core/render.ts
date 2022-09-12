@@ -1,20 +1,36 @@
 import { createComponentInstance, setupComponent } from './component'
-import type { ContainerElement, VNode } from './types'
+import type { ComponentInstance, VNode } from './types'
 
-export function render(vnode: VNode, container: ContainerElement) {
+export function render(vnode: VNode, container: Element) {
   patch(vnode, container)
 }
 
-function patch(vnode: VNode, container: ContainerElement) {
+function patch(vnode: VNode, container: Element) {
+  // 处理组件和element两种情况
+
   processComponent(vnode, container)
 }
 
-function processComponent(vnode: VNode, container: ContainerElement) {
-  mountComponent(vnode)
+function processElement(el: Element) {
+
 }
 
-function mountComponent(vnode: VNode) {
+function processComponent(vnode: VNode, container: Element) {
+  mountComponent(vnode, container)
+}
+
+function mountComponent(vnode: VNode, container: Element) {
   const instance = createComponentInstance(vnode)
 
   setupComponent(instance)
+
+  setupRenderEffect(instance, container)
+}
+
+function setupRenderEffect(instance: ComponentInstance, container: Element) {
+  console.log(typeof instance.render)
+  const subTree = instance.render!()
+  // vnode =>  patch
+  // vnode => element => mountElement
+  patch(subTree, container)
 }
