@@ -13,6 +13,9 @@ export function createApp(rootComponent) {
       if (typeof rootContainer === 'string')
         containerEl = document.querySelector(rootContainer)
 
+      else
+        containerEl = rootContainer
+
       if (!rootContainer)
         error(`can not find element ${rootContainer} on document`)
 

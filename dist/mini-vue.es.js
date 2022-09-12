@@ -1,7 +1,8 @@
 function createComponentInstance(vnode) {
   const component = {
     vnode,
-    type: vnode.type
+    type: vnode.type,
+    setupState: {}
   };
   return component;
 }
@@ -15,6 +16,13 @@ function setupStateFulComponent(instance) {
     const setupResult = setup();
     handleSetupResult(instance, setupResult);
   }
+  instance.proxy = new Proxy({}, {
+    get(target, key) {
+      const { setupState } = instance;
+      if (key in setupState)
+        return setupState[key];
+    }
+  });
 }
 function handleSetupResult(instance, setupResult) {
   if (typeof setupResult === "object")
@@ -26,24 +34,53 @@ function finishComponentSetup(instance) {
   if (Component.render)
     instance.render = Component.render;
 }
+const isObject = (val) => typeof val === "object" && val !== null;
+const error = (msg) => {
+  throw new Error(msg);
+};
 function render(vnode, container) {
-  patch(vnode);
+  patch(vnode, container);
 }
 function patch(vnode, container) {
-  processComponent(vnode);
+  if (typeof vnode.type === "string")
+    processElement(vnode, container);
+  else if (isObject(vnode.type))
+    processComponent(vnode, container);
+}
+function processElement(vnode, container) {
+  mountElement(vnode, container);
+}
+function mountElement(vnode, container) {
+  const { children, props } = vnode;
+  const el = document.createElement(vnode.type);
+  if (typeof children === "string")
+    el.textContent = children;
+  else if (Array.isArray(children))
+    mountChildren(vnode, el);
+  for (const key in props) {
+    const val = props[key];
+    el.setAttribute(key, val);
+  }
+  container.appendChild(el);
+}
+function mountChildren(vnode, container) {
+  vnode.children.forEach((item) => {
+    patch(item, container);
+  });
 }
 function processComponent(vnode, container) {
-  mountComponent(vnode);
+  mountComponent(vnode, container);
 }
 function mountComponent(vnode, container) {
   const instance = createComponentInstance(vnode);
   setupComponent(instance);
-  setupRenderEffect(instance);
+  setupRenderEffect(instance, container);
 }
 function setupRenderEffect(instance, container) {
-  console.log(typeof instance.render);
-  const subTree = instance.render();
-  patch(subTree);
+  var _a;
+  const { proxy } = instance;
+  const subTree = (_a = instance.render) == null ? void 0 : _a.call(proxy);
+  subTree && patch(subTree, container);
 }
 function createVNode(type, props, children) {
   const vnode = {
@@ -53,18 +90,18 @@ function createVNode(type, props, children) {
   };
   return vnode;
 }
-const error = (msg) => {
-  throw new Error(msg);
-};
 function createApp(rootComponent) {
   return {
     mount(rootContainer) {
       const vnode = createVNode(rootComponent);
+      let containerEl;
       if (typeof rootContainer === "string")
-        document.querySelector(rootContainer);
+        containerEl = document.querySelector(rootContainer);
+      else
+        containerEl = rootContainer;
       if (!rootContainer)
         error(`can not find element ${rootContainer} on document`);
-      render(vnode);
+      render(vnode, containerEl);
     }
   };
 }
