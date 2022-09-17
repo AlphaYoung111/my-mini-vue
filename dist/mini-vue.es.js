@@ -79,17 +79,17 @@ function mountChildren(vnode, container) {
 function processComponent(vnode, container) {
   mountComponent(vnode, container);
 }
-function mountComponent(vnode, container) {
-  const instance = createComponentInstance(vnode);
+function mountComponent(initialVNode, container) {
+  const instance = createComponentInstance(initialVNode);
   setupComponent(instance);
-  setupRenderEffect(instance, vnode, container);
+  setupRenderEffect(instance, initialVNode, container);
 }
-function setupRenderEffect(instance, vnode, container) {
+function setupRenderEffect(instance, initialVNode, container) {
   var _a;
   const { proxy } = instance;
   const subTree = (_a = instance.render) == null ? void 0 : _a.call(proxy);
   subTree && patch(subTree, container);
-  vnode.el = subTree.el;
+  initialVNode.el = subTree.el;
 }
 function createVNode(type, props, children) {
   const vnode = {
