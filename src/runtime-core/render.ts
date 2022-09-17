@@ -24,7 +24,10 @@ function processElement(vnode: PatchType, container: Element) {
 function mountElement(vnode: PatchType, container: Element) {
   const { children, props } = vnode as VNode
 
-  const el = document.createElement((vnode as VNode).type as ContainerElement)
+  const el = document.createElement((vnode as VNode).type as ContainerElement);
+
+  // 这里是每个element元素的el
+  (vnode as VNode).el = el
 
   if (typeof children === 'string')
     el.textContent = children
@@ -56,14 +59,17 @@ function mountComponent(vnode: VNode, container: Element) {
 
   setupComponent(instance)
 
-  setupRenderEffect(instance, container)
+  setupRenderEffect(instance, vnode, container)
 }
 
-function setupRenderEffect(instance: ComponentInstance, container: Element) {
+function setupRenderEffect(instance: ComponentInstance, vnode: VNode, container: Element) {
   const { proxy } = instance
 
   const subTree = instance.render?.call(proxy)
   // vnode =>  patch
   // vnode => element => mountElement
   subTree && patch(subTree, container)
+
+  // 在mounted完成后在将根节点的el赋值给组件
+  vnode.el = subTree!.el
 }

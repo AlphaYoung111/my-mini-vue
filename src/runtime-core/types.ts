@@ -14,6 +14,7 @@ export interface VNode {
   type: VNodeType
   props: object
   children?: VNodeChildren
+  el: HTMLElement | null
 }
 
 export interface ComponentInstance {
