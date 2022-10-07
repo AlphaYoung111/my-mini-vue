@@ -1,6 +1,7 @@
 import { createComponentInstance, setupComponent } from './component'
 import type { ComponentInstance, ContainerElement, PatchType, VNode } from './types'
 import { ShapeFlags } from '@/shared/ShapeFlag'
+import { isOn } from '@/shared'
 
 export function render(vnode: VNode, container: Element) {
   patch(vnode, container)
@@ -11,11 +12,13 @@ function patch(vnode: VNode, container: Element) {
 
   const { shapeFlag } = vnode
   // 非组件的情况下type为HTML标签
-  if (shapeFlag & ShapeFlags.ELEMENT)
+  if (shapeFlag & ShapeFlags.ELEMENT) {
     processElement(vnode, container)
+  }
 
-  else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT)
+  else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
     processComponent(vnode as VNode, container)
+  }
 }
 
 function processElement(vnode: PatchType, container: Element) {
@@ -31,17 +34,25 @@ function mountElement(vnode: PatchType, container: Element) {
   (vnode as VNode).el = el
 
   if (children) {
-    if (shapeFlag & ShapeFlags.TEXT_CHILDREN)
+    if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
       el.textContent = children as string
-
-    else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN)
+    }
+    else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
       mountChildren(vnode as VNode, el)
+    }
   }
 
   // props
   for (const key in props) {
     const val = props[key]
-    el.setAttribute(key, val)
+
+    if (isOn(key)) {
+      const eventName = key.slice(2).toLowerCase()
+      el.addEventListener(eventName, val)
+    }
+    else {
+      el.setAttribute(key, val)
+    }
   }
 
   container.appendChild(el)

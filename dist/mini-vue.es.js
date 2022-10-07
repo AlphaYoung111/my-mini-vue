@@ -48,15 +48,20 @@ var ShapeFlags = /* @__PURE__ */ ((ShapeFlags2) => {
   ShapeFlags2[ShapeFlags2["ARRAY_CHILDREN"] = 8] = "ARRAY_CHILDREN";
   return ShapeFlags2;
 })(ShapeFlags || {});
+const error = (msg) => {
+  throw new Error(msg);
+};
+const isOn = (key) => /^on[A-Z]/.test(key);
 function render(vnode, container) {
   patch(vnode, container);
 }
 function patch(vnode, container) {
   const { shapeFlag } = vnode;
-  if (shapeFlag & ShapeFlags.ELEMENT)
+  if (shapeFlag & ShapeFlags.ELEMENT) {
     processElement(vnode, container);
-  else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT)
+  } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
     processComponent(vnode, container);
+  }
 }
 function processElement(vnode, container) {
   mountElement(vnode, container);
@@ -66,14 +71,20 @@ function mountElement(vnode, container) {
   const el = document.createElement(vnode.type);
   vnode.el = el;
   if (children) {
-    if (shapeFlag & ShapeFlags.TEXT_CHILDREN)
+    if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
       el.textContent = children;
-    else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN)
+    } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
       mountChildren(vnode, el);
+    }
   }
   for (const key in props) {
     const val = props[key];
-    el.setAttribute(key, val);
+    if (isOn(key)) {
+      const eventName = key.slice(2).toLowerCase();
+      el.addEventListener(eventName, val);
+    } else {
+      el.setAttribute(key, val);
+    }
   }
   container.appendChild(el);
 }
@@ -115,9 +126,6 @@ function createVNode(type, props, children) {
 function getShapeFlag(type) {
   return typeof type === "string" ? ShapeFlags.ELEMENT : ShapeFlags.STATEFUL_COMPONENT;
 }
-const error = (msg) => {
-  throw new Error(msg);
-};
 function createApp(rootComponent) {
   return {
     mount(rootContainer) {

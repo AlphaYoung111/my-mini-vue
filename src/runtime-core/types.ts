@@ -14,7 +14,7 @@ export type VNodeChildren = VNode[] | string
 
 export interface VNode {
   type: VNodeType
-  props: object
+  props: PropsKey
   children?: VNodeChildren
   el: HTMLElement | null
   shapeFlag: ShapeFlags
@@ -29,3 +29,9 @@ export interface ComponentInstance {
 }
 
 export type PatchType = VNode | VNodeChildren
+
+export type PropsKey = {
+  id?: string
+  class?: string | string[]
+  onClick?: (e: Event) => void
+} & Record<`on${Capitalize<Exclude<string, ''>>}`, (p?: unknown) => unknown>

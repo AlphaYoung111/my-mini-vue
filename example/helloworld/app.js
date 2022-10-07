@@ -7,6 +7,12 @@ export const App = {
     return h('div', {
       id: 'root',
       class: ['hello'],
+      onClick() {
+        console.log('i am click')
+      },
+      onText() {
+        console.log(1)
+      },
     },
     `hi,${this.msg}`,
     // 'hi',

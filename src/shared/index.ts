@@ -7,3 +7,5 @@ export const hasChanged = (oldVal: any, newVal: any) => !Object.is(oldVal, newVa
 export const error = (msg: string) => {
   throw new Error(msg)
 }
+
+export const isOn = (key: string) => /^on[A-Z]/.test(key)
