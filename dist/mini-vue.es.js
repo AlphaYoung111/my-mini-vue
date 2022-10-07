@@ -41,30 +41,36 @@ function finishComponentSetup(instance) {
   if (Component.render)
     instance.render = Component.render;
 }
-const isObject = (val) => typeof val === "object" && val !== null;
-const error = (msg) => {
-  throw new Error(msg);
-};
+var ShapeFlags = /* @__PURE__ */ ((ShapeFlags2) => {
+  ShapeFlags2[ShapeFlags2["ELEMENT"] = 1] = "ELEMENT";
+  ShapeFlags2[ShapeFlags2["STATEFUL_COMPONENT"] = 2] = "STATEFUL_COMPONENT";
+  ShapeFlags2[ShapeFlags2["TEXT_CHILDREN"] = 4] = "TEXT_CHILDREN";
+  ShapeFlags2[ShapeFlags2["ARRAY_CHILDREN"] = 8] = "ARRAY_CHILDREN";
+  return ShapeFlags2;
+})(ShapeFlags || {});
 function render(vnode, container) {
   patch(vnode, container);
 }
 function patch(vnode, container) {
-  if (typeof vnode.type === "string")
+  const { shapeFlag } = vnode;
+  if (shapeFlag & ShapeFlags.ELEMENT)
     processElement(vnode, container);
-  else if (isObject(vnode.type))
+  else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT)
     processComponent(vnode, container);
 }
 function processElement(vnode, container) {
   mountElement(vnode, container);
 }
 function mountElement(vnode, container) {
-  const { children, props } = vnode;
+  const { children, props, shapeFlag } = vnode;
   const el = document.createElement(vnode.type);
   vnode.el = el;
-  if (typeof children === "string")
-    el.textContent = children;
-  else if (Array.isArray(children))
-    mountChildren(vnode, el);
+  if (children) {
+    if (shapeFlag & ShapeFlags.TEXT_CHILDREN)
+      el.textContent = children;
+    else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN)
+      mountChildren(vnode, el);
+  }
   for (const key in props) {
     const val = props[key];
     el.setAttribute(key, val);
@@ -96,10 +102,22 @@ function createVNode(type, props, children) {
     type,
     props,
     children,
-    el: null
+    el: null,
+    shapeFlag: getShapeFlag(type)
   };
+  if (typeof children === "string") {
+    vnode.shapeFlag |= ShapeFlags.TEXT_CHILDREN;
+  } else if (Array.isArray(children)) {
+    vnode.shapeFlag |= ShapeFlags.ARRAY_CHILDREN;
+  }
   return vnode;
 }
+function getShapeFlag(type) {
+  return typeof type === "string" ? ShapeFlags.ELEMENT : ShapeFlags.STATEFUL_COMPONENT;
+}
+const error = (msg) => {
+  throw new Error(msg);
+};
 function createApp(rootComponent) {
   return {
     mount(rootContainer) {

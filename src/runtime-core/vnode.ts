@@ -22,7 +22,5 @@ export function createVNode(type: VNodeType, props?, children?: VNodeChildren): 
 }
 
 function getShapeFlag(type: VNodeType): ShapeFlags {
-  if (typeof type === 'string')
-    return ShapeFlags.ELEMENT
-  return ShapeFlags.STATEFUL_COMPONENT
+  return typeof type === 'string' ? ShapeFlags.ELEMENT : ShapeFlags.STATEFUL_COMPONENT
 }

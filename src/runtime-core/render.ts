@@ -1,19 +1,20 @@
 import { createComponentInstance, setupComponent } from './component'
 import type { ComponentInstance, ContainerElement, PatchType, VNode } from './types'
-import { isObject } from '@/shared'
+import { ShapeFlags } from '@/shared/ShapeFlag'
 
 export function render(vnode: VNode, container: Element) {
   patch(vnode, container)
 }
 
-function patch(vnode: PatchType, container: Element) {
+function patch(vnode: VNode, container: Element) {
   // 处理组件和element两种情况
 
+  const { shapeFlag } = vnode
   // 非组件的情况下type为HTML标签
-  if (typeof (vnode as VNode).type === 'string')
+  if (shapeFlag & ShapeFlags.ELEMENT)
     processElement(vnode, container)
 
-  else if (isObject((vnode as VNode).type))
+  else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT)
     processComponent(vnode as VNode, container)
 }
 
@@ -22,18 +23,20 @@ function processElement(vnode: PatchType, container: Element) {
 }
 
 function mountElement(vnode: PatchType, container: Element) {
-  const { children, props } = vnode as VNode
+  const { children, props, shapeFlag } = vnode as VNode
 
   const el = document.createElement((vnode as VNode).type as ContainerElement);
 
   // 这里是每个element元素的el
   (vnode as VNode).el = el
 
-  if (typeof children === 'string')
-    el.textContent = children
+  if (children) {
+    if (shapeFlag & ShapeFlags.TEXT_CHILDREN)
+      el.textContent = children as string
 
-  else if (Array.isArray(children))
-    mountChildren(vnode as VNode, el)
+    else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN)
+      mountChildren(vnode as VNode, el)
+  }
 
   // props
   for (const key in props) {
