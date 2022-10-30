@@ -1,17 +1,20 @@
+import { initProps } from './componentProps'
 import { PublicInstanceProxyHandlers } from './componentPublicInstance'
 import type { ComponentInstance, ComponentRenderObj, VNode } from './types'
+import { shallowReadonly } from '@/reactivity/reactive'
 export function createComponentInstance(vnode: VNode): ComponentInstance {
   const component = {
     vnode,
     type: vnode.type,
     setupState: {},
+    props: {},
   }
 
   return component
 }
 
 export function setupComponent(instance: ComponentInstance) {
-  // initprops
+  initProps(instance, instance.vnode.props)
 
   // initslot
 
@@ -21,10 +24,11 @@ export function setupComponent(instance: ComponentInstance) {
 function setupStateFulComponent(instance: ComponentInstance) {
   const component = instance.type
 
-  const { setup } = component as ComponentRenderObj
+  const { setup } = component as unknown as ComponentRenderObj
 
   if (setup) {
-    const setupResult = setup()
+    // 对于props是第一层无法修改
+    const setupResult = setup(shallowReadonly(instance.props))
 
     handleSetupResult(instance, setupResult)
   }
@@ -37,15 +41,15 @@ function setupStateFulComponent(instance: ComponentInstance) {
 
 function handleSetupResult(instance: ComponentInstance, setupResult: Function|object) {
   // function | object
-  if (typeof setupResult === 'object')
+  if (typeof setupResult === 'object') {
     instance.setupState = setupResult
+  }
 
   finishComponentSetup(instance)
 }
 
 function finishComponentSetup(instance: ComponentInstance) {
-  const Component = instance.type as ComponentRenderObj
+  const Component = instance.type as unknown as ComponentRenderObj
 
-  if (Component.render)
-    instance.render = Component.render
+  if (Component.render) { instance.render = Component.render }
 }

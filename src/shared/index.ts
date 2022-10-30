@@ -9,3 +9,5 @@ export const error = (msg: string) => {
 }
 
 export const isOn = (key: string) => /^on[A-Z]/.test(key)
+
+export const hasOwn = (val, key) => Object.prototype.hasOwnProperty.call(val, key)

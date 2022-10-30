@@ -1,4 +1,5 @@
 import { h } from '../../dist/mini-vue.es.js'
+import { Foo } from './foo.js'
 
 window.self = null
 export const App = {
@@ -14,7 +15,7 @@ export const App = {
         console.log(1)
       },
     },
-    `hi,${this.msg}`,
+    // `hi,${this.msg}`,
     // 'hi',
     // [
     //   h('div', {
@@ -28,6 +29,7 @@ export const App = {
     //   '555',
     //   ),
     // ],
+    [h('div', {}, 'hi'), h(Foo, { count: 1 })],
     )
   },
 

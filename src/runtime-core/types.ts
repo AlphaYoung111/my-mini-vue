@@ -4,7 +4,7 @@ export type ContainerElement = keyof HTMLElementTagNameMap
 
 export interface ComponentRenderObj {
   render: () => VNode
-  setup?: () => object | Function
+  setup?: (props: Readonly<PropsKey>) => object | Function
 }
 
 // export type VNodeType = ComponentRenderObj | ContainerElement
@@ -26,6 +26,7 @@ export interface ComponentInstance {
   type: VNodeType
   render?: () => VNode
   proxy?: object
+  props: PropsKey
 }
 
 export type PatchType = VNode | VNodeChildren
