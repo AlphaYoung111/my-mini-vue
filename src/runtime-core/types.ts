@@ -2,9 +2,17 @@ import type { ShapeFlags } from './../shared/ShapeFlag'
 
 export type ContainerElement = keyof HTMLElementTagNameMap
 
+export interface ComponentRenderCtx {
+  emit: (eventKey: string, ...params) => void
+}
+
 export interface ComponentRenderObj {
   render: () => VNode
-  setup?: (props: Readonly<PropsKey>) => object | Function
+  setup?: (
+    props: Readonly<PropsKey>,
+    ctx: ComponentRenderCtx
+  ) => object | Function
+  emits?: string[]
 }
 
 // export type VNodeType = ComponentRenderObj | ContainerElement
@@ -27,6 +35,8 @@ export interface ComponentInstance {
   render?: () => VNode
   proxy?: object
   props: PropsKey
+  emit: (eventKey: string, ...params) => void
+  emits: string[]
 }
 
 export type PatchType = VNode | VNodeChildren

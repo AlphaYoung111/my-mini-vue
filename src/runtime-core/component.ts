@@ -1,6 +1,7 @@
 import { initProps } from './componentProps'
 import { PublicInstanceProxyHandlers } from './componentPublicInstance'
-import type { ComponentInstance, ComponentRenderObj, VNode } from './types'
+import type { ComponentInstance, ComponentRenderCtx, ComponentRenderObj, VNode } from './types'
+import { emit } from './componentEmit'
 import { shallowReadonly } from '@/reactivity/reactive'
 export function createComponentInstance(vnode: VNode): ComponentInstance {
   const component = {
@@ -8,7 +9,11 @@ export function createComponentInstance(vnode: VNode): ComponentInstance {
     type: vnode.type,
     setupState: {},
     props: {},
+    emit: (() => {}) as ComponentRenderCtx['emit'],
+    emits: [],
   }
+
+  component.emit = emit.bind(null, component)
 
   return component
 }
@@ -28,7 +33,12 @@ function setupStateFulComponent(instance: ComponentInstance) {
 
   if (setup) {
     // 对于props是第一层无法修改
-    const setupResult = setup(shallowReadonly(instance.props))
+    const setupResult = setup(
+      shallowReadonly(instance.props),
+      {
+        emit: instance.emit,
+      },
+    )
 
     handleSetupResult(instance, setupResult)
   }

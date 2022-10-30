@@ -8,6 +8,9 @@ const error = (msg) => {
 };
 const isOn = (key) => /^on[A-Z]/.test(key);
 const hasOwn = (val, key) => Object.prototype.hasOwnProperty.call(val, key);
+const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
+const camelize = (str) => str.split("-").map((item) => capitalize(item)).join("");
+const toHandlerKey = (str) => str ? `on${camelize(str)}` : "";
 const publicPropertiesMap = {
   $el: (i) => i.vnode.el
 };
@@ -25,6 +28,13 @@ const PublicInstanceProxyHandlers = {
     }
   }
 };
+function emit(instance, eventKey, ...params) {
+  console.log("emit", eventKey);
+  const { props } = instance;
+  const eventHandlerName = toHandlerKey(eventKey);
+  const emitHandler = props[eventHandlerName];
+  emitHandler && emitHandler(...params);
+}
 const targetMap = /* @__PURE__ */ new WeakMap();
 function trigger(target, key, value) {
   const depsMap = targetMap.get(target);
@@ -110,8 +120,12 @@ function createComponentInstance(vnode) {
     vnode,
     type: vnode.type,
     setupState: {},
-    props: {}
+    props: {},
+    emit: () => {
+    },
+    emits: []
   };
+  component.emit = emit.bind(null, component);
   return component;
 }
 function setupComponent(instance) {
@@ -122,7 +136,9 @@ function setupStateFulComponent(instance) {
   const component = instance.type;
   const { setup } = component;
   if (setup) {
-    const setupResult = setup(shallowReadonly(instance.props));
+    const setupResult = setup(shallowReadonly(instance.props), {
+      emit: instance.emit
+    });
     handleSetupResult(instance, setupResult);
   }
   instance.proxy = new Proxy({ _: instance }, PublicInstanceProxyHandlers);
@@ -225,12 +241,14 @@ function createApp(rootComponent) {
     mount(rootContainer) {
       const vnode = createVNode(rootComponent);
       let containerEl;
-      if (typeof rootContainer === "string")
+      if (typeof rootContainer === "string") {
         containerEl = document.querySelector(rootContainer);
-      else
+      } else {
         containerEl = rootContainer;
-      if (!rootContainer)
+      }
+      if (!rootContainer) {
         error(`can not find element ${rootContainer} on document`);
+      }
       render(vnode, containerEl);
     }
   };

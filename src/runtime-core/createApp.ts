@@ -10,14 +10,14 @@ export function createApp(rootComponent) {
 
       let containerEl
 
-      if (typeof rootContainer === 'string')
+      if (typeof rootContainer === 'string') {
         containerEl = document.querySelector(rootContainer)
-
-      else
+      }
+      else {
         containerEl = rootContainer
+      }
 
-      if (!rootContainer)
-        error(`can not find element ${rootContainer} on document`)
+      if (!rootContainer) { error(`can not find element ${rootContainer} on document`) }
 
       render(vnode, containerEl)
     },

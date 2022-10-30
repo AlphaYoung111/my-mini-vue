@@ -11,3 +11,9 @@ export const error = (msg: string) => {
 export const isOn = (key: string) => /^on[A-Z]/.test(key)
 
 export const hasOwn = (val, key) => Object.prototype.hasOwnProperty.call(val, key)
+
+export const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1)
+
+const camelize = (str: string) => str.split('-').map(item => capitalize(item)).join('')
+
+export const toHandlerKey = (str: string) => str ? `on${camelize(str)}` : ''
