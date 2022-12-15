@@ -12,7 +12,8 @@ const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 const camelize = (str) => str.split("-").map((item) => capitalize(item)).join("");
 const toHandlerKey = (str) => str ? `on${camelize(str)}` : "";
 const publicPropertiesMap = {
-  $el: (i) => i.vnode.el
+  $el: (i) => i.vnode.el,
+  $slots: (i) => i.slots
 };
 const PublicInstanceProxyHandlers = {
   get({ _: instance }, key) {
@@ -29,11 +30,34 @@ const PublicInstanceProxyHandlers = {
   }
 };
 function emit(instance, eventKey, ...params) {
-  console.log("emit", eventKey);
   const { props } = instance;
   const eventHandlerName = toHandlerKey(eventKey);
   const emitHandler = props[eventHandlerName];
   emitHandler && emitHandler(...params);
+}
+var ShapeFlags = /* @__PURE__ */ ((ShapeFlags2) => {
+  ShapeFlags2[ShapeFlags2["ELEMENT"] = 1] = "ELEMENT";
+  ShapeFlags2[ShapeFlags2["STATEFUL_COMPONENT"] = 2] = "STATEFUL_COMPONENT";
+  ShapeFlags2[ShapeFlags2["TEXT_CHILDREN"] = 4] = "TEXT_CHILDREN";
+  ShapeFlags2[ShapeFlags2["ARRAY_CHILDREN"] = 8] = "ARRAY_CHILDREN";
+  ShapeFlags2[ShapeFlags2["SLOT_CHILDREN"] = 16] = "SLOT_CHILDREN";
+  return ShapeFlags2;
+})(ShapeFlags || {});
+function initSlots(instance, children) {
+  if (instance.vnode.shapeFlag & ShapeFlags.SLOT_CHILDREN) {
+    normalizeObjectsSlots(children, instance.slots);
+  }
+}
+function normalizeObjectsSlots(children, slots) {
+  if (isObject(children)) {
+    for (const key in children) {
+      const value = children[key];
+      slots[key] = (props) => normalizeSlotValue(value(props));
+    }
+  }
+}
+function normalizeSlotValue(value) {
+  return Array.isArray(value) ? value : [value];
 }
 const targetMap = /* @__PURE__ */ new WeakMap();
 function trigger(target, key, value) {
@@ -123,13 +147,15 @@ function createComponentInstance(vnode) {
     props: {},
     emit: () => {
     },
-    emits: []
+    emits: [],
+    slots: {}
   };
   component.emit = emit.bind(null, component);
   return component;
 }
 function setupComponent(instance) {
   initProps(instance, instance.vnode.props);
+  initSlots(instance, instance.vnode.children);
   setupStateFulComponent(instance);
 }
 function setupStateFulComponent(instance) {
@@ -155,13 +181,6 @@ function finishComponentSetup(instance) {
     instance.render = Component.render;
   }
 }
-var ShapeFlags = /* @__PURE__ */ ((ShapeFlags2) => {
-  ShapeFlags2[ShapeFlags2["ELEMENT"] = 1] = "ELEMENT";
-  ShapeFlags2[ShapeFlags2["STATEFUL_COMPONENT"] = 2] = "STATEFUL_COMPONENT";
-  ShapeFlags2[ShapeFlags2["TEXT_CHILDREN"] = 4] = "TEXT_CHILDREN";
-  ShapeFlags2[ShapeFlags2["ARRAY_CHILDREN"] = 8] = "ARRAY_CHILDREN";
-  return ShapeFlags2;
-})(ShapeFlags || {});
 function render(vnode, container) {
   patch(vnode, container);
 }
@@ -230,6 +249,10 @@ function createVNode(type, props, children) {
     vnode.shapeFlag |= ShapeFlags.TEXT_CHILDREN;
   } else if (Array.isArray(children)) {
     vnode.shapeFlag |= ShapeFlags.ARRAY_CHILDREN;
+  } else if (vnode.shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
+    if (isObject(vnode.children)) {
+      vnode.shapeFlag |= ShapeFlags.SLOT_CHILDREN;
+    }
   }
   return vnode;
 }
@@ -256,4 +279,12 @@ function createApp(rootComponent) {
 function h(type, props, children) {
   return createVNode(type, props, children);
 }
-export { createApp, h };
+function renderSlots(slots, name, props) {
+  const slot = slots[name];
+  if (slot) {
+    if (typeof slot === "function") {
+      return createVNode("div", {}, slot(props));
+    }
+  }
+}
+export { createApp, h, renderSlots };

@@ -1,5 +1,6 @@
 import type { VNode, VNodeChildren, VNodeType } from './types'
 import { ShapeFlags } from '@/shared/ShapeFlag'
+import { isObject } from '@/shared'
 
 export function createVNode(type: VNodeType, props?, children?: VNodeChildren): VNode {
   const vnode = {
@@ -16,6 +17,13 @@ export function createVNode(type: VNodeType, props?, children?: VNodeChildren): 
   }
   else if (Array.isArray(children)) {
     vnode.shapeFlag |= ShapeFlags.ARRAY_CHILDREN
+  }
+
+  // 判断是否为插槽 组件 + children(object)
+  else if (vnode.shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
+    if (isObject(vnode.children)) {
+      vnode.shapeFlag |= ShapeFlags.SLOT_CHILDREN
+    }
   }
 
   return vnode

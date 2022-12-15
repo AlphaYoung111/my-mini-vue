@@ -2,15 +2,17 @@ import { initProps } from './componentProps'
 import { PublicInstanceProxyHandlers } from './componentPublicInstance'
 import type { ComponentInstance, ComponentRenderCtx, ComponentRenderObj, VNode } from './types'
 import { emit } from './componentEmit'
+import { initSlots } from './componentSlots'
 import { shallowReadonly } from '@/reactivity/reactive'
 export function createComponentInstance(vnode: VNode): ComponentInstance {
-  const component = {
+  const component: ComponentInstance = {
     vnode,
     type: vnode.type,
     setupState: {},
     props: {},
     emit: (() => {}) as ComponentRenderCtx['emit'],
     emits: [],
+    slots: {},
   }
 
   component.emit = emit.bind(null, component)
@@ -21,7 +23,7 @@ export function createComponentInstance(vnode: VNode): ComponentInstance {
 export function setupComponent(instance: ComponentInstance) {
   initProps(instance, instance.vnode.props)
 
-  // initslot
+  initSlots(instance, instance.vnode.children)
 
   setupStateFulComponent(instance)
 }

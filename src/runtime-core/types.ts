@@ -18,7 +18,7 @@ export interface ComponentRenderObj {
 // export type VNodeType = ComponentRenderObj | ContainerElement
 export type VNodeType = string
 
-export type VNodeChildren = VNode[] | string
+export type VNodeChildren = VNode[] | string | Slots
 
 export interface VNode {
   type: VNodeType
@@ -37,6 +37,7 @@ export interface ComponentInstance {
   props: PropsKey
   emit: (eventKey: string, ...params) => void
   emits: string[]
+  slots: Slots
 }
 
 export type PatchType = VNode | VNodeChildren
@@ -46,3 +47,9 @@ export type PropsKey = {
   class?: string | string[]
   onClick?: (e: Event) => void
 } & Record<`on${Capitalize<Exclude<string, ''>>}`, (p?: unknown) => unknown>
+
+export type SlotChildren = (props?: Record<string, any>) => VNodeChildren
+
+export type Slots = {
+  default?: SlotChildren
+}& Record<string, SlotChildren>

@@ -4,6 +4,8 @@ import { hasOwn } from '@/shared'
 const publicPropertiesMap = {
   // 这里拿的是组件的实例上的el
   $el: (i: ComponentInstance) => i.vnode.el,
+
+  $slots: (i: ComponentInstance) => i.slots,
 }
 
 export const PublicInstanceProxyHandlers = {
