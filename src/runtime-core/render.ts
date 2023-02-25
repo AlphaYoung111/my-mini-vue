@@ -1,20 +1,20 @@
 import { createComponentInstance, setupComponent } from './component'
-import type { ComponentInstance, ContainerElement, PatchType, VNode } from './types'
+import type { ComponentInstance, ContainerElement, ParentComponentInstance, PatchType, VNode } from './types'
 import { Fragment, Text } from './vnode'
 import { ShapeFlags } from '@/shared/ShapeFlag'
 import { isOn } from '@/shared'
 
 export function render(vnode: VNode, container: Element) {
-  patch(vnode, container)
+  patch(vnode, container, null)
 }
 
-function patch(vnode: VNode, container: Element) {
+function patch(vnode: VNode, container: Element, parentComponent: ParentComponentInstance) {
   // 处理组件和element两种情况, 还有特殊得fragment
   const { shapeFlag, type } = vnode
 
   switch (type) {
     case Fragment:
-      processFragment(vnode, container)
+      processFragment(vnode, container, parentComponent)
       break
 
     case Text:
@@ -24,11 +24,11 @@ function patch(vnode: VNode, container: Element) {
     default:
       // 非组件的情况下type为HTML标签
       if (shapeFlag & ShapeFlags.ELEMENT) {
-        processElement(vnode, container)
+        processElement(vnode, container, parentComponent)
       }
 
       else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
-        processComponent(vnode as VNode, container)
+        processComponent(vnode as VNode, container, parentComponent)
       }
       break
   }
@@ -40,15 +40,15 @@ function processText(vnode: VNode, container: Element) {
   container.append(textNode)
 }
 
-function processFragment(vnode: VNode, container: Element) {
-  mountChildren(vnode, container)
+function processFragment(vnode: VNode, container: Element, parentComponent: ParentComponentInstance) {
+  mountChildren(vnode, container, parentComponent)
 }
 
-function processElement(vnode: PatchType, container: Element) {
-  mountElement(vnode, container)
+function processElement(vnode: PatchType, container: Element, parentComponent: ParentComponentInstance) {
+  mountElement(vnode, container, parentComponent)
 }
 
-function mountElement(vnode: PatchType, container: Element) {
+function mountElement(vnode: PatchType, container: Element, parentComponent: ParentComponentInstance) {
   const { children, props, shapeFlag } = vnode as VNode
 
   const el = document.createElement((vnode as VNode).type as ContainerElement);
@@ -61,7 +61,7 @@ function mountElement(vnode: PatchType, container: Element) {
       el.textContent = children as string
     }
     else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
-      mountChildren(vnode as VNode, el)
+      mountChildren(vnode as VNode, el, parentComponent)
     }
   }
 
@@ -81,18 +81,18 @@ function mountElement(vnode: PatchType, container: Element) {
   container.appendChild(el)
 }
 
-function mountChildren(vnode: VNode, container: Element) {
+function mountChildren(vnode: VNode, container: Element, parentComponent: ParentComponentInstance) {
   (vnode.children as VNode[])!.forEach((item) => {
-    patch(item, container)
+    patch(item, container, parentComponent)
   })
 }
 
-function processComponent(vnode: VNode, container: Element) {
-  mountComponent(vnode, container)
+function processComponent(vnode: VNode, container: Element, parentComponent: ParentComponentInstance) {
+  mountComponent(vnode, container, parentComponent)
 }
 
-function mountComponent(initialVNode: VNode, container: Element) {
-  const instance = createComponentInstance(initialVNode)
+function mountComponent(initialVNode: VNode, container: Element, parentComponent: ParentComponentInstance) {
+  const instance = createComponentInstance(initialVNode, parentComponent)
 
   setupComponent(instance)
 
@@ -105,7 +105,7 @@ function setupRenderEffect(instance: ComponentInstance, initialVNode: VNode, con
   const subTree = instance.render?.call(proxy)
   // vnode =>  patch
   // vnode => element => mountElement
-  subTree && patch(subTree, container)
+  subTree && patch(subTree, container, instance)
 
   // 在mounted完成后在将根节点的el赋值给组件
   initialVNode.el = subTree!.el

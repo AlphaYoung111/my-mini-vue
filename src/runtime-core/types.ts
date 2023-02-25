@@ -16,7 +16,7 @@ export interface ComponentRenderObj {
 }
 
 // export type VNodeType = ComponentRenderObj | ContainerElement
-export type VNodeType = string | Symbol
+export type VNodeType = string | Symbol | ComponentInstance
 
 export type VNodeChildren = VNode[] | string | Slots
 
@@ -29,6 +29,7 @@ export interface VNode {
 }
 
 export interface ComponentInstance {
+  name?: string
   vnode: VNode
   setupState: object
   type: VNodeType
@@ -38,7 +39,11 @@ export interface ComponentInstance {
   emit: (eventKey: string, ...params) => void
   emits: string[]
   slots: Slots
+  provides: Record<string, any>
+  parent: ParentComponentInstance
 }
+
+export type ParentComponentInstance = ComponentInstance | null
 
 export type PatchType = VNode | VNodeChildren
 

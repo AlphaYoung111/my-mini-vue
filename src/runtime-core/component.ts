@@ -5,7 +5,7 @@ import { emit } from './componentEmit'
 import { initSlots } from './componentSlots'
 import { shallowReadonly } from '@/reactivity/reactive'
 
-export function createComponentInstance(vnode: VNode): ComponentInstance {
+export function createComponentInstance(vnode: VNode, parent: ComponentInstance | null): ComponentInstance {
   const component: ComponentInstance = {
     vnode,
     type: vnode.type,
@@ -14,6 +14,8 @@ export function createComponentInstance(vnode: VNode): ComponentInstance {
     emit: (() => {}) as ComponentRenderCtx['emit'],
     emits: [],
     slots: {},
+    provides: parent ? parent.provides : {},
+    parent,
   }
 
   component.emit = emit.bind(null, component)

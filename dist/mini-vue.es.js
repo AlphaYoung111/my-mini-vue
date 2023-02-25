@@ -139,7 +139,7 @@ function createActiveObject(target, baseHandlers) {
   }
   return new Proxy(target, baseHandlers);
 }
-function createComponentInstance(vnode) {
+function createComponentInstance(vnode, parent) {
   const component = {
     vnode,
     type: vnode.type,
@@ -148,7 +148,9 @@ function createComponentInstance(vnode) {
     emit: () => {
     },
     emits: [],
-    slots: {}
+    slots: {},
+    provides: parent ? parent.provides : {},
+    parent
   };
   component.emit = emit.bind(null, component);
   return component;
@@ -218,22 +220,22 @@ function getShapeFlag(type) {
   return typeof type === "string" ? ShapeFlags.ELEMENT : ShapeFlags.STATEFUL_COMPONENT;
 }
 function render(vnode, container) {
-  patch(vnode, container);
+  patch(vnode, container, null);
 }
-function patch(vnode, container) {
+function patch(vnode, container, parentComponent) {
   const { shapeFlag, type } = vnode;
   switch (type) {
     case Fragment:
-      processFragment(vnode, container);
+      processFragment(vnode, container, parentComponent);
       break;
     case Text:
       processText(vnode, container);
       break;
     default:
       if (shapeFlag & ShapeFlags.ELEMENT) {
-        processElement(vnode, container);
+        processElement(vnode, container, parentComponent);
       } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
-        processComponent(vnode, container);
+        processComponent(vnode, container, parentComponent);
       }
       break;
   }
@@ -243,13 +245,13 @@ function processText(vnode, container) {
   const textNode = vnode.el = document.createTextNode(children);
   container.append(textNode);
 }
-function processFragment(vnode, container) {
-  mountChildren(vnode, container);
+function processFragment(vnode, container, parentComponent) {
+  mountChildren(vnode, container, parentComponent);
 }
-function processElement(vnode, container) {
-  mountElement(vnode, container);
+function processElement(vnode, container, parentComponent) {
+  mountElement(vnode, container, parentComponent);
 }
-function mountElement(vnode, container) {
+function mountElement(vnode, container, parentComponent) {
   const { children, props, shapeFlag } = vnode;
   const el = document.createElement(vnode.type);
   vnode.el = el;
@@ -257,7 +259,7 @@ function mountElement(vnode, container) {
     if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
       el.textContent = children;
     } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
-      mountChildren(vnode, el);
+      mountChildren(vnode, el, parentComponent);
     }
   }
   for (const key in props) {
@@ -271,16 +273,16 @@ function mountElement(vnode, container) {
   }
   container.appendChild(el);
 }
-function mountChildren(vnode, container) {
+function mountChildren(vnode, container, parentComponent) {
   vnode.children.forEach((item) => {
-    patch(item, container);
+    patch(item, container, parentComponent);
   });
 }
-function processComponent(vnode, container) {
-  mountComponent(vnode, container);
+function processComponent(vnode, container, parentComponent) {
+  mountComponent(vnode, container, parentComponent);
 }
-function mountComponent(initialVNode, container) {
-  const instance = createComponentInstance(initialVNode);
+function mountComponent(initialVNode, container, parentComponent) {
+  const instance = createComponentInstance(initialVNode, parentComponent);
   setupComponent(instance);
   setupRenderEffect(instance, initialVNode, container);
 }
@@ -288,7 +290,7 @@ function setupRenderEffect(instance, initialVNode, container) {
   var _a;
   const { proxy } = instance;
   const subTree = (_a = instance.render) == null ? void 0 : _a.call(proxy);
-  subTree && patch(subTree, container);
+  subTree && patch(subTree, container, instance);
   initialVNode.el = subTree.el;
 }
 function createApp(rootComponent) {
@@ -319,4 +321,33 @@ function renderSlots(slots, name, props) {
     }
   }
 }
-export { createApp, createTextNode, createVNode, getCurrentInstance, h, renderSlots };
+function provide(key, value) {
+  var _a;
+  const currentInstance2 = getCurrentInstance();
+  if (currentInstance2) {
+    let { provides } = currentInstance2;
+    const parentProviders = (_a = currentInstance2.parent) == null ? void 0 : _a.provides;
+    if (parentProviders === provides) {
+      provides = currentInstance2.provides = Object.create(parentProviders);
+    }
+    provides[key] = value;
+  }
+}
+function inject(key, defaultValue) {
+  var _a;
+  const currentInstance2 = getCurrentInstance();
+  if (currentInstance2) {
+    const parentProvides = (_a = currentInstance2.parent) == null ? void 0 : _a.provides;
+    if (parentProvides) {
+      if (key in parentProvides) {
+        return parentProvides[key];
+      } else if (defaultValue) {
+        if (typeof defaultValue === "function") {
+          return defaultValue();
+        }
+        return defaultValue;
+      }
+    }
+  }
+}
+export { createApp, createTextNode, createVNode, getCurrentInstance, h, inject, provide, renderSlots };
