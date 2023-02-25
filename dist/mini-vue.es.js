@@ -162,9 +162,11 @@ function setupStateFulComponent(instance) {
   const component = instance.type;
   const { setup } = component;
   if (setup) {
+    setCurrentInstance(instance);
     const setupResult = setup(shallowReadonly(instance.props), {
       emit: instance.emit
     });
+    setCurrentInstance(null);
     handleSetupResult(instance, setupResult);
   }
   instance.proxy = new Proxy({ _: instance }, PublicInstanceProxyHandlers);
@@ -180,6 +182,13 @@ function finishComponentSetup(instance) {
   if (Component.render) {
     instance.render = Component.render;
   }
+}
+let currentInstance = null;
+function getCurrentInstance() {
+  return currentInstance;
+}
+function setCurrentInstance(instance) {
+  currentInstance = instance;
 }
 const Fragment = Symbol("Fragment");
 const Text = Symbol("Text");
@@ -310,4 +319,4 @@ function renderSlots(slots, name, props) {
     }
   }
 }
-export { createApp, createTextNode, createVNode, h, renderSlots };
+export { createApp, createTextNode, createVNode, getCurrentInstance, h, renderSlots };

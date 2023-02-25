@@ -4,6 +4,7 @@ import type { ComponentInstance, ComponentRenderCtx, ComponentRenderObj, VNode }
 import { emit } from './componentEmit'
 import { initSlots } from './componentSlots'
 import { shallowReadonly } from '@/reactivity/reactive'
+
 export function createComponentInstance(vnode: VNode): ComponentInstance {
   const component: ComponentInstance = {
     vnode,
@@ -34,6 +35,8 @@ function setupStateFulComponent(instance: ComponentInstance) {
   const { setup } = component as unknown as ComponentRenderObj
 
   if (setup) {
+    setCurrentInstance(instance)
+
     // 对于props是第一层无法修改
     const setupResult = setup(
       shallowReadonly(instance.props),
@@ -41,6 +44,8 @@ function setupStateFulComponent(instance: ComponentInstance) {
         emit: instance.emit,
       },
     )
+
+    setCurrentInstance(null)
 
     handleSetupResult(instance, setupResult)
   }
@@ -64,4 +69,13 @@ function finishComponentSetup(instance: ComponentInstance) {
   const Component = instance.type as unknown as ComponentRenderObj
 
   if (Component.render) { instance.render = Component.render }
+}
+
+let currentInstance: ComponentInstance | null = null
+export function getCurrentInstance() {
+  return currentInstance
+}
+
+function setCurrentInstance(instance: ComponentInstance | null) {
+  currentInstance = instance
 }
