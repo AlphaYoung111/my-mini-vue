@@ -37,8 +37,7 @@ function covert(value) {
 }
 
 function trackRefValue(ref) {
-  if (isTracking())
-    trackEffects(ref.deps)
+  if (isTracking()) { trackEffects(ref.deps) }
 }
 
 export function ref<T>(value: T): any {
@@ -62,11 +61,9 @@ export function proxyRefs(objWithRefs) {
 
     set(target, key, value) {
       // 新的值是不是ref,旧的值是ref就需要使用.value
-      if (isRef(target[key]) && !isRef(value))
-        return target[key].value = value
+      if (isRef(target[key]) && !isRef(value)) { return target[key].value = value }
 
-      else
-        return Reflect.set(target, key, value)
+      else { return Reflect.set(target, key, value) }
     },
   })
 }

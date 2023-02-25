@@ -16,8 +16,7 @@ export class ReactiveEffect {
   }
 
   run() {
-    if (!this.active)
-      return this._fn()
+    if (!this.active) { return this._fn() }
 
     // 非stop的情况下，开启开关收集状态
     activeEffect = this
@@ -55,7 +54,7 @@ export function isTracking() {
 }
 
 export function track(target, key) {
-  if (!isTracking()) return
+  if (!isTracking()) { return }
 
   // target => key => deps
   let depsMap = targetMap.get(target) as Map<PropertyKey, Set<ReactiveEffect>>
@@ -76,31 +75,27 @@ export function track(target, key) {
 // 这里抽离添加dep的逻辑，因为ref，不需要上面使用key的形式
 export function trackEffects(dep: Set<any>) {
   // 将当前执行得effect添加到对应得dep中
-  if (dep.has(activeEffect!)) return
+  if (dep.has(activeEffect!)) { return }
   dep.add(activeEffect!)
   // 将当前属性得所有effect存储到自己得身上，方便stop进行清空想要更新得effect
   activeEffect!.deps.push(dep)
 }
 
-export function trigger(target, key, value) {
+export function trigger(target, key) {
   const depsMap = targetMap.get(target) as Map<PropertyKey, Set<ReactiveEffect>>
-  if (!depsMap)
-    throw new Error(`not found ${target}`)
+  if (!depsMap) { throw new Error(`not found ${target}`) }
 
   const dep = depsMap.get(key)
-  if (!dep)
-    throw new Error(`not found ${key} in ${target}`)
+  if (!dep) { throw new Error(`not found ${key} in ${target}`) }
 
   triggerEffects(dep)
 }
 
 export function triggerEffects(dep: Set<any>) {
   for (const effect of dep) {
-    if (effect.scheduler)
-      effect.scheduler()
+    if (effect.scheduler) { effect.scheduler() }
 
-    else
-      effect.run()
+    else { effect.run() }
   }
 }
 

@@ -58,3 +58,9 @@ export type SlotChildren = (props?: Record<string, any>) => VNodeChildren
 export type Slots = {
   default?: SlotChildren
 }& Record<string, SlotChildren>
+
+export interface RenderOptions {
+  createElement: (type) => any
+  patchProp: (el, key, val) => void
+  insert: (el, container) => void
+}

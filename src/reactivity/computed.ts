@@ -13,8 +13,7 @@ class ComputedRefImp {
 
     // 这样后面更新的时候就会自动去执行scheduler,解开锁重新调用函数返回新值
     this._effect = new ReactiveEffect(getter, () => {
-      if (!this._isDirty)
-        this._isDirty = true
+      if (!this._isDirty) { this._isDirty = true }
     })
   }
 
