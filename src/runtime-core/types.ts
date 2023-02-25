@@ -16,7 +16,7 @@ export interface ComponentRenderObj {
 }
 
 // export type VNodeType = ComponentRenderObj | ContainerElement
-export type VNodeType = string
+export type VNodeType = string | Symbol
 
 export type VNodeChildren = VNode[] | string | Slots
 
@@ -24,7 +24,7 @@ export interface VNode {
   type: VNodeType
   props: PropsKey
   children?: VNodeChildren
-  el: HTMLElement | null
+  el: HTMLElement | Text |null
   shapeFlag: ShapeFlags
 }
 

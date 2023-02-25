@@ -1,5 +1,6 @@
 import { createComponentInstance, setupComponent } from './component'
 import type { ComponentInstance, ContainerElement, PatchType, VNode } from './types'
+import { Fragment, Text } from './vnode'
 import { ShapeFlags } from '@/shared/ShapeFlag'
 import { isOn } from '@/shared'
 
@@ -8,17 +9,39 @@ export function render(vnode: VNode, container: Element) {
 }
 
 function patch(vnode: VNode, container: Element) {
-  // 处理组件和element两种情况
+  // 处理组件和element两种情况, 还有特殊得fragment
+  const { shapeFlag, type } = vnode
 
-  const { shapeFlag } = vnode
-  // 非组件的情况下type为HTML标签
-  if (shapeFlag & ShapeFlags.ELEMENT) {
-    processElement(vnode, container)
-  }
+  switch (type) {
+    case Fragment:
+      processFragment(vnode, container)
+      break
 
-  else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
-    processComponent(vnode as VNode, container)
+    case Text:
+      processText(vnode, container)
+      break
+
+    default:
+      // 非组件的情况下type为HTML标签
+      if (shapeFlag & ShapeFlags.ELEMENT) {
+        processElement(vnode, container)
+      }
+
+      else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
+        processComponent(vnode as VNode, container)
+      }
+      break
   }
+}
+
+function processText(vnode: VNode, container: Element) {
+  const { children } = vnode
+  const textNode = (vnode.el = document.createTextNode(children as string))
+  container.append(textNode)
+}
+
+function processFragment(vnode: VNode, container: Element) {
+  mountChildren(vnode, container)
 }
 
 function processElement(vnode: PatchType, container: Element) {

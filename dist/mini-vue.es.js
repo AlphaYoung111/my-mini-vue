@@ -181,16 +181,61 @@ function finishComponentSetup(instance) {
     instance.render = Component.render;
   }
 }
+const Fragment = Symbol("Fragment");
+const Text = Symbol("Text");
+function createVNode(type, props, children) {
+  const vnode = {
+    type,
+    props,
+    children,
+    el: null,
+    shapeFlag: getShapeFlag(type)
+  };
+  if (typeof children === "string") {
+    vnode.shapeFlag |= ShapeFlags.TEXT_CHILDREN;
+  } else if (Array.isArray(children)) {
+    vnode.shapeFlag |= ShapeFlags.ARRAY_CHILDREN;
+  } else if (vnode.shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
+    if (isObject(vnode.children)) {
+      vnode.shapeFlag |= ShapeFlags.SLOT_CHILDREN;
+    }
+  }
+  return vnode;
+}
+function createTextNode(text) {
+  return createVNode(Text, {}, text);
+}
+function getShapeFlag(type) {
+  return typeof type === "string" ? ShapeFlags.ELEMENT : ShapeFlags.STATEFUL_COMPONENT;
+}
 function render(vnode, container) {
   patch(vnode, container);
 }
 function patch(vnode, container) {
-  const { shapeFlag } = vnode;
-  if (shapeFlag & ShapeFlags.ELEMENT) {
-    processElement(vnode, container);
-  } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
-    processComponent(vnode, container);
+  const { shapeFlag, type } = vnode;
+  switch (type) {
+    case Fragment:
+      processFragment(vnode, container);
+      break;
+    case Text:
+      processText(vnode, container);
+      break;
+    default:
+      if (shapeFlag & ShapeFlags.ELEMENT) {
+        processElement(vnode, container);
+      } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
+        processComponent(vnode, container);
+      }
+      break;
   }
+}
+function processText(vnode, container) {
+  const { children } = vnode;
+  const textNode = vnode.el = document.createTextNode(children);
+  container.append(textNode);
+}
+function processFragment(vnode, container) {
+  mountChildren(vnode, container);
 }
 function processElement(vnode, container) {
   mountElement(vnode, container);
@@ -237,28 +282,6 @@ function setupRenderEffect(instance, initialVNode, container) {
   subTree && patch(subTree, container);
   initialVNode.el = subTree.el;
 }
-function createVNode(type, props, children) {
-  const vnode = {
-    type,
-    props,
-    children,
-    el: null,
-    shapeFlag: getShapeFlag(type)
-  };
-  if (typeof children === "string") {
-    vnode.shapeFlag |= ShapeFlags.TEXT_CHILDREN;
-  } else if (Array.isArray(children)) {
-    vnode.shapeFlag |= ShapeFlags.ARRAY_CHILDREN;
-  } else if (vnode.shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
-    if (isObject(vnode.children)) {
-      vnode.shapeFlag |= ShapeFlags.SLOT_CHILDREN;
-    }
-  }
-  return vnode;
-}
-function getShapeFlag(type) {
-  return typeof type === "string" ? ShapeFlags.ELEMENT : ShapeFlags.STATEFUL_COMPONENT;
-}
 function createApp(rootComponent) {
   return {
     mount(rootContainer) {
@@ -283,8 +306,8 @@ function renderSlots(slots, name, props) {
   const slot = slots[name];
   if (slot) {
     if (typeof slot === "function") {
-      return createVNode("div", {}, slot(props));
+      return createVNode(Fragment, {}, slot(props));
     }
   }
 }
-export { createApp, h, renderSlots };
+export { createApp, createTextNode, createVNode, h, renderSlots };
