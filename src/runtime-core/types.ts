@@ -28,7 +28,28 @@ export interface VNode {
   shapeFlag: ShapeFlags
 }
 
+export type PatchFn = (
+  n1: VNode | null,
+  n2: VNode,
+  container: Element,
+  parentComponent: ParentComponentInstance
+) => void
+
+export type ProcessTextFn = (
+  n1: VNode | null,
+  n2: VNode,
+  container: Element,
+) => void
+
+export type ProcessElementFn = (
+  n1: VNode | null,
+  n2: VNode,
+  container: Element,
+  parentComponent: ParentComponentInstance
+) => void
+
 export interface ComponentInstance {
+  isMounted: boolean
   name?: string
   vnode: VNode
   setupState: object
@@ -41,6 +62,7 @@ export interface ComponentInstance {
   slots: Slots
   provides: Record<string, any>
   parent: ParentComponentInstance
+  subTree: VNode | null
 }
 
 export type ParentComponentInstance = ComponentInstance | null

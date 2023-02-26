@@ -3,10 +3,12 @@ import { PublicInstanceProxyHandlers } from './componentPublicInstance'
 import type { ComponentInstance, ComponentRenderCtx, ComponentRenderObj, VNode } from './types'
 import { emit } from './componentEmit'
 import { initSlots } from './componentSlots'
+import { proxyRefs } from '@/reactivity/ref'
 import { shallowReadonly } from '@/reactivity/reactive'
 
 export function createComponentInstance(vnode: VNode, parent: ComponentInstance | null): ComponentInstance {
   const component: ComponentInstance = {
+    isMounted: false,
     vnode,
     type: vnode.type,
     setupState: {},
@@ -16,6 +18,7 @@ export function createComponentInstance(vnode: VNode, parent: ComponentInstance 
     slots: {},
     provides: parent ? parent.provides : {},
     parent,
+    subTree: null,
   }
 
   component.emit = emit.bind(null, component)
@@ -61,7 +64,7 @@ function setupStateFulComponent(instance: ComponentInstance) {
 function handleSetupResult(instance: ComponentInstance, setupResult: Function|object) {
   // function | object
   if (typeof setupResult === 'object') {
-    instance.setupState = setupResult
+    instance.setupState = proxyRefs(setupResult)
   }
 
   finishComponentSetup(instance)
@@ -70,7 +73,9 @@ function handleSetupResult(instance: ComponentInstance, setupResult: Function|ob
 function finishComponentSetup(instance: ComponentInstance) {
   const Component = instance.type as unknown as ComponentRenderObj
 
-  if (Component.render) { instance.render = Component.render }
+  if (Component.render) {
+    instance.render = Component.render
+  }
 }
 
 let currentInstance: ComponentInstance | null = null

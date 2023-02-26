@@ -2,7 +2,7 @@ export function add(a: number, b: number) {
   return a + b
 }
 
-export { ref, isRef, unRef } from './ref'
+export { ref, isRef, unRef, proxyRefs } from './ref'
 export {
   reactive,
   readonly,

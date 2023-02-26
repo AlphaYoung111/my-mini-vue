@@ -148,6 +148,14 @@ function triggerEffects(dep) {
     }
   }
 }
+function effect(fn, options) {
+  const _effect = new ReactiveEffect(fn, options == null ? void 0 : options.scheduler);
+  extend(_effect, options);
+  _effect.run();
+  const runner = _effect.run.bind(_effect);
+  runner.effect = _effect;
+  return runner;
+}
 const get = createGetter();
 const set = createSetter();
 const readonlyGet = createGetter(true);
@@ -221,8 +229,62 @@ function createActiveObject(target, baseHandlers) {
   }
   return new Proxy(target, baseHandlers);
 }
+class RefImpl {
+  constructor(value) {
+    __publicField(this, "_value");
+    __publicField(this, "_rawValue");
+    __publicField(this, "deps");
+    __publicField(this, "_v_isRef", true);
+    this._rawValue = value;
+    this._value = covert(value);
+    this.deps = /* @__PURE__ */ new Set();
+  }
+  get value() {
+    trackRefValue(this);
+    return this._value;
+  }
+  set value(newValue) {
+    if (hasChanged(newValue, this._rawValue)) {
+      this._rawValue = newValue;
+      this._value = covert(newValue);
+      triggerEffects(this.deps);
+    }
+  }
+}
+function covert(value) {
+  return isObject(value) ? reactive(value) : value;
+}
+function trackRefValue(ref2) {
+  if (isTracking()) {
+    trackEffects(ref2.deps);
+  }
+}
+function ref(value) {
+  return new RefImpl(value);
+}
+function isRef(value) {
+  return !!value._v_isRef;
+}
+function unRef(ref2) {
+  return isRef(ref2) ? ref2.value : ref2;
+}
+function proxyRefs(objWithRefs) {
+  return new Proxy(objWithRefs, {
+    get(target, key) {
+      return unRef(Reflect.get(target, key));
+    },
+    set(target, key, value) {
+      if (isRef(target[key]) && !isRef(value)) {
+        return target[key].value = value;
+      } else {
+        return Reflect.set(target, key, value);
+      }
+    }
+  });
+}
 function createComponentInstance(vnode, parent) {
   const component = {
+    isMounted: false,
     vnode,
     type: vnode.type,
     setupState: {},
@@ -257,7 +319,7 @@ function setupStateFulComponent(instance) {
 }
 function handleSetupResult(instance, setupResult) {
   if (typeof setupResult === "object") {
-    instance.setupState = setupResult;
+    instance.setupState = proxyRefs(setupResult);
   }
   finishComponentSetup(instance);
 }
@@ -429,11 +491,18 @@ function createRender(options) {
     setupRenderEffect(instance, initialVNode, container);
   }
   function setupRenderEffect(instance, initialVNode, container) {
-    var _a;
-    const { proxy } = instance;
-    const subTree = (_a = instance.render) == null ? void 0 : _a.call(proxy);
-    subTree && patch(subTree, container, instance);
-    initialVNode.el = subTree.el;
+    effect(() => {
+      var _a;
+      if (!instance.isMounted) {
+        const { proxy } = instance;
+        const subTree = (_a = instance.render) == null ? void 0 : _a.call(proxy);
+        subTree && patch(subTree, container, instance);
+        initialVNode.el = subTree.el;
+        instance.isMounted = true;
+      } else {
+        console.log("\u66F4\u65B0");
+      }
+    });
   }
   return {
     createApp: createAppAPI(render2)
@@ -460,45 +529,6 @@ const render = createRender({
 });
 function createApp(params) {
   return render.createApp(params);
-}
-class RefImpl {
-  constructor(value) {
-    __publicField(this, "_value");
-    __publicField(this, "_rawValue");
-    __publicField(this, "deps");
-    __publicField(this, "_v_isRef", true);
-    this._rawValue = value;
-    this._value = covert(value);
-    this.deps = /* @__PURE__ */ new Set();
-  }
-  get value() {
-    trackRefValue(this);
-    return this._value;
-  }
-  set value(newValue) {
-    if (hasChanged(newValue, this._rawValue)) {
-      this._rawValue = newValue;
-      this._value = covert(newValue);
-      triggerEffects(this.deps);
-    }
-  }
-}
-function covert(value) {
-  return isObject(value) ? reactive(value) : value;
-}
-function trackRefValue(ref2) {
-  if (isTracking()) {
-    trackEffects(ref2.deps);
-  }
-}
-function ref(value) {
-  return new RefImpl(value);
-}
-function isRef(value) {
-  return !!value._v_isRef;
-}
-function unRef(ref2) {
-  return isRef(ref2) ? ref2.value : ref2;
 }
 class ComputedRefImp {
   constructor(getter) {
@@ -527,4 +557,4 @@ function computed(getter) {
 function add(a, b) {
   return a + b;
 }
-export { add, computed, createApp, createAppAPI, createRender, createTextNode, createVNode, getCurrentInstance, h, inject, isProxy, isReactive, isReadonly, isRef, provide, reactive, readonly, ref, renderSlots, shallowReadonly, unRef };
+export { add, computed, createApp, createAppAPI, createRender, createTextNode, createVNode, getCurrentInstance, h, inject, isProxy, isReactive, isReadonly, isRef, provide, proxyRefs, reactive, readonly, ref, renderSlots, shallowReadonly, unRef };
