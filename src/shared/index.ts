@@ -17,3 +17,5 @@ export const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.sli
 const camelize = (str: string) => str.split('-').map(item => capitalize(item)).join('')
 
 export const toHandlerKey = (str: string) => str ? `on${camelize(str)}` : ''
+
+export const EMPTY_OBJ = {}

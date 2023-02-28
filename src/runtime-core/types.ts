@@ -20,11 +20,17 @@ export type VNodeType = string | Symbol | ComponentInstance
 
 export type VNodeChildren = VNode[] | string | Slots
 
+export type RendererNode = Record<string, any>
+
+export interface RendererElement extends RendererNode {}
+
+export type Data = Record<string, unknown>
+
 export interface VNode {
   type: VNodeType
   props: PropsKey
   children?: VNodeChildren
-  el: HTMLElement | Text |null
+  el: RendererElement
   shapeFlag: ShapeFlags
 }
 
@@ -83,6 +89,6 @@ export type Slots = {
 
 export interface RenderOptions {
   createElement: (type) => any
-  patchProp: (el, key, val) => void
+  patchProp: (el, key, prevVal, nextVal) => void
   insert: (el, container) => void
 }

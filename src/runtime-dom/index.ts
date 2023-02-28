@@ -5,13 +5,23 @@ function createElement(type) {
   return document.createElement(type)
 }
 
-function patchProp(el: HTMLElement, key: string, val: any) {
+function patchProp(
+  el: HTMLElement,
+  key: string,
+  prevVal: any,
+  nextVal: any,
+) {
   if (isOn(key)) {
     const eventName = key.slice(2).toLowerCase()
-    el.addEventListener(eventName, val)
+    el.addEventListener(eventName, nextVal)
   }
   else {
-    el.setAttribute(key, val)
+    if (nextVal === undefined || nextVal === null) {
+      el.removeAttribute(key)
+    }
+    else {
+      el.setAttribute(key, nextVal)
+    }
   }
 }
 

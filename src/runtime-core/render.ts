@@ -1,9 +1,10 @@
 import { createComponentInstance, setupComponent } from './component'
-import type { ComponentInstance, ContainerElement, ParentComponentInstance, PatchFn, PatchType, ProcessTextFn, RenderOptions, VNode } from './types'
+import type { ComponentInstance, ContainerElement, Data, ParentComponentInstance, PatchFn, PatchType, ProcessTextFn, RenderOptions, RendererElement, VNode } from './types'
 import { Fragment, Text } from './vnode'
 import { createAppAPI } from './createApp'
 import { effect } from '@/reactivity/effect'
 import { ShapeFlags } from '@/shared/ShapeFlag'
+import { EMPTY_OBJ } from '@/shared'
 
 export function createRender(options: RenderOptions) {
   const {
@@ -59,8 +60,53 @@ export function createRender(options: RenderOptions) {
     mountChildren(n2, container, parentComponent)
   }
 
-  function processElement(n1: VNode | null, n2: PatchType, container: Element, parentComponent: ParentComponentInstance) {
-    mountElement(n2, container, parentComponent)
+  function patchProps(
+    el: RendererElement,
+    oldProps: Data,
+    newProps: Data,
+  ) {
+    if (oldProps !== newProps) {
+      for (const key in newProps) {
+        const prevProp = oldProps[key]
+        const nextProp = newProps[key]
+
+        if (prevProp !== nextProp) {
+          hostPatchProp(el, key, prevProp, nextProp)
+        }
+      }
+
+      if (oldProps !== EMPTY_OBJ) {
+        for (const key in oldProps) {
+          if (!(key in newProps)) {
+            hostPatchProp(el, key, oldProps[key], null)
+          }
+        }
+      }
+    }
+  }
+
+  function patchElement(n1: VNode, n2: VNode, container: Element) {
+    const oldProps = n1.props || EMPTY_OBJ
+    const newProps = n2.props || EMPTY_OBJ
+
+    // 赋值el得时候仅仅会在vnode挂载得时候进行操作
+    // 这里对于n2来说就是执行得挂载操作
+    const el = (n2.el = n1.el)
+    patchProps(el, oldProps, newProps)
+  }
+
+  function processElement(
+    n1: VNode | null,
+    n2: VNode,
+    container: Element,
+    parentComponent: ParentComponentInstance,
+  ) {
+    if (!n1) {
+      mountElement(n2, container, parentComponent)
+    }
+    else {
+      patchElement(n1, n2, container)
+    }
   }
 
   function mountElement(vnode: PatchType, container: Element, parentComponent: ParentComponentInstance) {
@@ -84,7 +130,7 @@ export function createRender(options: RenderOptions) {
     for (const key in props) {
       const val = props[key]
 
-      hostPatchProp(el, key, val)
+      hostPatchProp(el, key, null, val)
     }
 
     hostInsert(el, container)
@@ -138,7 +184,6 @@ export function createRender(options: RenderOptions) {
         initialVNode.el = subTree!.el
 
         instance.isMounted = true
-        console.log('更新')
       }
     })
   }
