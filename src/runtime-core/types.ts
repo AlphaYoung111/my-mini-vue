@@ -37,20 +37,20 @@ export interface VNode {
 export type PatchFn = (
   n1: VNode | null,
   n2: VNode,
-  container: Element,
+  container: RendererElement,
   parentComponent: ParentComponentInstance
 ) => void
 
 export type ProcessTextFn = (
   n1: VNode | null,
   n2: VNode,
-  container: Element,
+  container: RendererElement,
 ) => void
 
 export type ProcessElementFn = (
   n1: VNode | null,
   n2: VNode,
-  container: Element,
+  container: RendererElement,
   parentComponent: ParentComponentInstance
 ) => void
 
@@ -91,4 +91,6 @@ export interface RenderOptions {
   createElement: (type) => any
   patchProp: (el, key, prevVal, nextVal) => void
   insert: (el, container) => void
+  remove: (el) => void
+  setElementText: (el, textChildren) => void
 }

@@ -1,5 +1,5 @@
 import { createComponentInstance, setupComponent } from './component'
-import type { ComponentInstance, ContainerElement, Data, ParentComponentInstance, PatchFn, PatchType, ProcessTextFn, RenderOptions, RendererElement, VNode } from './types'
+import type { ComponentInstance, ContainerElement, Data, ParentComponentInstance, PatchFn, PatchType, ProcessTextFn, RenderOptions, RendererElement, VNode, VNodeChildren } from './types'
 import { Fragment, Text } from './vnode'
 import { createAppAPI } from './createApp'
 import { effect } from '@/reactivity/effect'
@@ -11,9 +11,11 @@ export function createRender(options: RenderOptions) {
     createElement: hostCreateElement,
     patchProp: hostPatchProp,
     insert: hostInsert,
+    remove: hostRemove,
+    setElementText: hostSetElementText,
   } = options
 
-  function render(vnode: VNode, container: Element) {
+  function render(vnode: VNode, container: RendererElement) {
     patch(null, vnode, container, null)
   }
 
@@ -56,8 +58,8 @@ export function createRender(options: RenderOptions) {
     container.append(textNode)
   }
 
-  const processFragment = (n1: VNode | null, n2: VNode, container: Element, parentComponent: ParentComponentInstance) => {
-    mountChildren(n2, container, parentComponent)
+  const processFragment = (n1: VNode | null, n2: VNode, container: RendererElement, parentComponent: ParentComponentInstance) => {
+    mountChildren(n2.children as VNode[], container, parentComponent)
   }
 
   function patchProps(
@@ -85,31 +87,79 @@ export function createRender(options: RenderOptions) {
     }
   }
 
-  function patchElement(n1: VNode, n2: VNode, container: Element) {
+  function patchChildren(
+    n1: VNode,
+    n2: VNode,
+    container: RendererElement,
+    parentComponet: ParentComponentInstance,
+  ) {
+    const { shapeFlag: prevShapeFlag, children: c1 } = n1
+    const { shapeFlag, children: c2 } = n2
+
+    // 新得是文本
+    if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
+      // 旧得是数组
+      if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+        // 1. 删除旧的子节点
+        unmountChildren(n1.children as VNode[])
+      }
+
+      // 旧得是文本
+      if (c1 !== c2) {
+        hostSetElementText(container, c2)
+      }
+    }
+    else {
+      // 新得是数组
+      if (prevShapeFlag & ShapeFlags.TEXT_CHILDREN) {
+        hostSetElementText(container, '')
+      }
+      else {
+        unmountChildren(c2 as VNode[])
+      }
+      mountChildren(c2 as VNode[], container, parentComponet)
+    }
+  }
+
+  function unmountChildren(children: VNode[]) {
+    for (const child of children) {
+      const el = child.el
+      hostRemove(el)
+    }
+  }
+
+  function patchElement(
+    n1: VNode,
+    n2: VNode,
+    container: RendererElement,
+    parentComponent: ParentComponentInstance,
+  ) {
     const oldProps = n1.props || EMPTY_OBJ
     const newProps = n2.props || EMPTY_OBJ
 
     // 赋值el得时候仅仅会在vnode挂载得时候进行操作
     // 这里对于n2来说就是执行得挂载操作
     const el = (n2.el = n1.el)
+
+    patchChildren(n1, n2, el, parentComponent)
     patchProps(el, oldProps, newProps)
   }
 
   function processElement(
     n1: VNode | null,
     n2: VNode,
-    container: Element,
+    container: RendererElement,
     parentComponent: ParentComponentInstance,
   ) {
     if (!n1) {
       mountElement(n2, container, parentComponent)
     }
     else {
-      patchElement(n1, n2, container)
+      patchElement(n1, n2, container, parentComponent)
     }
   }
 
-  function mountElement(vnode: PatchType, container: Element, parentComponent: ParentComponentInstance) {
+  function mountElement(vnode: PatchType, container: RendererElement, parentComponent: ParentComponentInstance) {
     const { children, props, shapeFlag } = vnode as VNode
 
     const el = hostCreateElement((vnode as VNode).type as ContainerElement);
@@ -122,7 +172,7 @@ export function createRender(options: RenderOptions) {
         el.textContent = children as string
       }
       else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
-        mountChildren(vnode as VNode, el, parentComponent)
+        mountChildren((vnode as VNode).children as VNode[], el, parentComponent)
       }
     }
 
@@ -136,17 +186,17 @@ export function createRender(options: RenderOptions) {
     hostInsert(el, container)
   }
 
-  function mountChildren(vnode: VNode, container: Element, parentComponent: ParentComponentInstance) {
-    (vnode.children as VNode[])!.forEach((item) => {
+  function mountChildren(children: VNode[], container: RendererElement, parentComponent: ParentComponentInstance) {
+    children.forEach((item) => {
       patch(null, item, container, parentComponent)
     })
   }
 
-  function processComponent(n1: VNode | null, n2: VNode, container: Element, parentComponent: ParentComponentInstance) {
+  function processComponent(n1: VNode | null, n2: VNode, container: RendererElement, parentComponent: ParentComponentInstance) {
     mountComponent(n2, container, parentComponent)
   }
 
-  function mountComponent(initialVNode: VNode, container: Element, parentComponent: ParentComponentInstance) {
+  function mountComponent(initialVNode: VNode, container: RendererElement, parentComponent: ParentComponentInstance) {
     const instance = createComponentInstance(initialVNode, parentComponent)
 
     setupComponent(instance)
@@ -154,7 +204,7 @@ export function createRender(options: RenderOptions) {
     setupRenderEffect(instance, initialVNode, container)
   }
 
-  function setupRenderEffect(instance: ComponentInstance, initialVNode: VNode, container: Element) {
+  function setupRenderEffect(instance: ComponentInstance, initialVNode: VNode, container: RendererElement) {
     effect(() => {
       if (!instance.isMounted) {
         const { proxy } = instance
