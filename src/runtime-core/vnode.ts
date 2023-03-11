@@ -6,12 +6,13 @@ export const Fragment = Symbol('Fragment')
 export const Text = Symbol('Text')
 
 export function createVNode(type: VNodeType, props?, children?: VNodeChildren): VNode {
-  const vnode = {
+  const vnode: VNode = {
     type,
     props,
     children,
     el: null,
     shapeFlag: getShapeFlag(type),
+    key: props && props.key,
   }
 
   if (typeof children === 'string') {

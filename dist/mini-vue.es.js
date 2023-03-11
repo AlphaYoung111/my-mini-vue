@@ -346,7 +346,8 @@ function createVNode(type, props, children) {
     props,
     children,
     el: null,
-    shapeFlag: getShapeFlag(type)
+    shapeFlag: getShapeFlag(type),
+    key: props && props.key
   };
   if (typeof children === "string") {
     vnode.shapeFlag |= ShapeFlags.TEXT_CHILDREN;
@@ -433,22 +434,22 @@ function createRender(options) {
     setElementText: hostSetElementText
   } = options;
   function render2(vnode, container) {
-    patch(null, vnode, container, null);
+    patch(null, vnode, container, null, null);
   }
-  const patch = (n1, n2, container, parentComponent) => {
+  const patch = (n1, n2, container, parentComponent, anchor) => {
     const { shapeFlag, type } = n2;
     switch (type) {
       case Fragment:
-        processFragment(n1, n2, container, parentComponent);
+        processFragment(n1, n2, container, parentComponent, anchor);
         break;
       case Text:
         processText(n1, n2, container);
         break;
       default:
         if (shapeFlag & ShapeFlags.ELEMENT) {
-          processElement(n1, n2, container, parentComponent);
+          processElement(n1, n2, container, parentComponent, anchor);
         } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
-          processComponent(n1, n2, container, parentComponent);
+          processComponent(n1, n2, container, parentComponent, anchor);
         }
         break;
     }
@@ -458,8 +459,8 @@ function createRender(options) {
     const textNode = n2.el = document.createTextNode(children);
     container.append(textNode);
   };
-  const processFragment = (n1, n2, container, parentComponent) => {
-    mountChildren(n2.children, container, parentComponent);
+  const processFragment = (n1, n2, container, parentComponent, anchor) => {
+    mountChildren(n2.children, container, parentComponent, anchor);
   };
   function patchProps(el, oldProps, newProps) {
     if (oldProps !== newProps) {
@@ -479,7 +480,7 @@ function createRender(options) {
       }
     }
   }
-  function patchChildren(n1, n2, container, parentComponet) {
+  function patchChildren(n1, n2, container, parentComponet, anchor) {
     const { shapeFlag: prevShapeFlag, children: c1 } = n1;
     const { shapeFlag, children: c2 } = n2;
     if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
@@ -492,11 +493,57 @@ function createRender(options) {
     } else {
       if (prevShapeFlag & ShapeFlags.TEXT_CHILDREN) {
         hostSetElementText(container, "");
+        mountChildren(c2, container, parentComponet, anchor);
       } else {
-        unmountChildren(c2);
+        patchKeyedChildren(c1, c2, container, parentComponet, anchor);
       }
-      mountChildren(c2, container, parentComponet);
     }
+  }
+  function patchKeyedChildren(c1, c2, container, parentComponet, parentAnchor) {
+    const l2 = c2.length;
+    let i = 0;
+    let e1 = c1.length - 1;
+    let e2 = l2 - 1;
+    while (i <= e1 && i <= e2) {
+      const n1 = c1[i];
+      const n2 = c2[i];
+      if (isSameVNodeType(n1, n2)) {
+        patch(n1, n2, container, parentComponet, parentAnchor);
+      } else {
+        break;
+      }
+      i++;
+    }
+    while (i <= e1 && i <= e2) {
+      const n1 = c1[e1];
+      const n2 = c2[e2];
+      if (isSameVNodeType(n1, n2)) {
+        patch(n1, n2, container, parentComponet, parentAnchor);
+      } else {
+        break;
+      }
+      e1--;
+      e2--;
+    }
+    if (i > e1) {
+      if (i <= e2) {
+        const nextPos = e2 + 1;
+        const anchor = nextPos < l2 ? c2[nextPos].el : null;
+        while (i <= e2) {
+          patch(null, c2[i], container, parentComponet, anchor);
+          i++;
+        }
+      }
+    } else if (i > e2) {
+      while (i <= e1) {
+        hostRemove(c1[i].el);
+        i++;
+      }
+    }
+    console.log(i);
+  }
+  function isSameVNodeType(n1, n2) {
+    return n1.type === n2.type && n1.key === n2.key;
   }
   function unmountChildren(children) {
     for (const child of children) {
@@ -504,21 +551,21 @@ function createRender(options) {
       hostRemove(el);
     }
   }
-  function patchElement(n1, n2, container, parentComponent) {
+  function patchElement(n1, n2, container, parentComponent, anchor) {
     const oldProps = n1.props || EMPTY_OBJ;
     const newProps = n2.props || EMPTY_OBJ;
     const el = n2.el = n1.el;
-    patchChildren(n1, n2, el, parentComponent);
+    patchChildren(n1, n2, el, parentComponent, anchor);
     patchProps(el, oldProps, newProps);
   }
-  function processElement(n1, n2, container, parentComponent) {
+  function processElement(n1, n2, container, parentComponent, anchor) {
     if (!n1) {
-      mountElement(n2, container, parentComponent);
+      mountElement(n2, container, parentComponent, anchor);
     } else {
-      patchElement(n1, n2, container, parentComponent);
+      patchElement(n1, n2, container, parentComponent, anchor);
     }
   }
-  function mountElement(vnode, container, parentComponent) {
+  function mountElement(vnode, container, parentComponent, anchor) {
     const { children, props, shapeFlag } = vnode;
     const el = hostCreateElement(vnode.type);
     vnode.el = el;
@@ -526,36 +573,36 @@ function createRender(options) {
       if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
         el.textContent = children;
       } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
-        mountChildren(vnode.children, el, parentComponent);
+        mountChildren(vnode.children, el, parentComponent, anchor);
       }
     }
     for (const key in props) {
       const val = props[key];
       hostPatchProp(el, key, null, val);
     }
-    hostInsert(el, container);
+    hostInsert(el, container, anchor);
   }
-  function mountChildren(children, container, parentComponent) {
+  function mountChildren(children, container, parentComponent, anchor) {
     children.forEach((item) => {
-      patch(null, item, container, parentComponent);
+      patch(null, item, container, parentComponent, anchor);
     });
   }
-  function processComponent(n1, n2, container, parentComponent) {
-    mountComponent(n2, container, parentComponent);
+  function processComponent(n1, n2, container, parentComponent, anchor) {
+    mountComponent(n2, container, parentComponent, anchor);
   }
-  function mountComponent(initialVNode, container, parentComponent) {
+  function mountComponent(initialVNode, container, parentComponent, anchor) {
     const instance = createComponentInstance(initialVNode, parentComponent);
     setupComponent(instance);
-    setupRenderEffect(instance, initialVNode, container);
+    setupRenderEffect(instance, initialVNode, container, anchor);
   }
-  function setupRenderEffect(instance, initialVNode, container) {
+  function setupRenderEffect(instance, initialVNode, container, anchor) {
     effect(() => {
       var _a, _b;
       if (!instance.isMounted) {
         const { proxy } = instance;
         instance.subTree = ((_a = instance.render) == null ? void 0 : _a.call(proxy)) || null;
         const subTree = instance.subTree;
-        subTree && patch(null, subTree, container, instance);
+        subTree && patch(null, subTree, container, instance, anchor);
         initialVNode.el = subTree.el;
         instance.isMounted = true;
       } else {
@@ -563,7 +610,7 @@ function createRender(options) {
         const prevSubTree = instance.subTree;
         const subTree = (_b = instance.render) == null ? void 0 : _b.call(proxy);
         instance.subTree = subTree || null;
-        subTree && patch(prevSubTree, subTree, container, instance);
+        subTree && patch(prevSubTree, subTree, container, instance, anchor);
         initialVNode.el = subTree.el;
         instance.isMounted = true;
       }
@@ -588,8 +635,8 @@ function patchProp(el, key, prevVal, nextVal) {
     }
   }
 }
-function insert(el, parent) {
-  parent.appendChild(el);
+function insert(child, parent, anchor) {
+  parent.insertBefore(child, anchor || null);
 }
 function remove(el) {
   const parentNode = el.parentNode;

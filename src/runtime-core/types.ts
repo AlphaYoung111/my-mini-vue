@@ -30,15 +30,17 @@ export interface VNode {
   type: VNodeType
   props: PropsKey
   children?: VNodeChildren
-  el: RendererElement
+  el: RendererElement | null
   shapeFlag: ShapeFlags
+  key: string | number | symbol | null
 }
 
 export type PatchFn = (
   n1: VNode | null,
   n2: VNode,
   container: RendererElement,
-  parentComponent: ParentComponentInstance
+  parentComponent: ParentComponentInstance,
+  anchor: RendererElement | null
 ) => void
 
 export type ProcessTextFn = (
@@ -90,7 +92,7 @@ export type Slots = {
 export interface RenderOptions {
   createElement: (type) => any
   patchProp: (el, key, prevVal, nextVal) => void
-  insert: (el, container) => void
+  insert: (child, container, anchor) => void
   remove: (el) => void
   setElementText: (el, textChildren) => void
 }

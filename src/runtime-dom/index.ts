@@ -25,8 +25,8 @@ function patchProp(
   }
 }
 
-function insert(el: HTMLElement, parent: HTMLElement) {
-  parent.appendChild(el)
+function insert(child: HTMLElement, parent: HTMLElement, anchor: HTMLElement | null) {
+  parent.insertBefore(child, anchor || null)
 }
 
 function remove(el: HTMLElement) {
