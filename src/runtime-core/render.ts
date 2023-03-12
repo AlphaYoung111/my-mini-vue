@@ -196,6 +196,55 @@ export function createRender(options: RenderOptions) {
         i++
       }
     }
+    else {
+      // 中间对比
+      const s1 = i
+      const s2 = i
+
+      // 新的，除去前后双端对比后中间节点的数量
+      const toBePatched = e2 - s2 + 1
+      let patched = 0
+
+      const keyToNewIndexMap = new Map()
+
+      for (let i = s2; i <= e2; i++) {
+        const nextChild = c2[i]
+
+        keyToNewIndexMap.set(nextChild.key, i)
+      }
+
+      for (let i = s1; i <= e1; i++) {
+        const prevChild = c1[i]
+
+        if (patched >= toBePatched) {
+          hostRemove(prevChild.el)
+          continue
+        }
+
+        let newIndex
+        // 匹配null undefined 用户有给key的情况
+        if (prevChild.key !== null) {
+          newIndex = keyToNewIndexMap.get(prevChild.key)
+        }
+        else {
+          for (let j = s2; j <= e2; j++) {
+            if (isSameVNodeType(prevChild, c2[j])) {
+              newIndex = j
+              break
+            }
+          }
+        }
+
+        // 找不到说明是被删了，上面的情况都没有走进来
+        if (newIndex === undefined) {
+          hostRemove(prevChild.el)
+        }
+        else {
+          patch(prevChild, c2[newIndex], container, parentComponet, null)
+          patched++
+        }
+      }
+    }
     console.log(i)
   }
 

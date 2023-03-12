@@ -539,6 +539,40 @@ function createRender(options) {
         hostRemove(c1[i].el);
         i++;
       }
+    } else {
+      const s1 = i;
+      const s2 = i;
+      const toBePatched = e2 - s2 + 1;
+      let patched = 0;
+      const keyToNewIndexMap = /* @__PURE__ */ new Map();
+      for (let i2 = s2; i2 <= e2; i2++) {
+        const nextChild = c2[i2];
+        keyToNewIndexMap.set(nextChild.key, i2);
+      }
+      for (let i2 = s1; i2 <= e1; i2++) {
+        const prevChild = c1[i2];
+        if (patched >= toBePatched) {
+          hostRemove(prevChild.el);
+          continue;
+        }
+        let newIndex;
+        if (prevChild.key !== null) {
+          newIndex = keyToNewIndexMap.get(prevChild.key);
+        } else {
+          for (let j = s2; j <= e2; j++) {
+            if (isSameVNodeType(prevChild, c2[j])) {
+              newIndex = j;
+              break;
+            }
+          }
+        }
+        if (newIndex === void 0) {
+          hostRemove(prevChild.el);
+        } else {
+          patch(prevChild, c2[newIndex], container, parentComponet, null);
+          patched++;
+        }
+      }
     }
     console.log(i);
   }
